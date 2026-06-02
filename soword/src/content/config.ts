@@ -4,6 +4,7 @@ const worksCollection = defineCollection({
   type: 'content',
   schema: z.object({
     title:          z.string(),
+    author:         z.string().default('勒索沃德'),
     genre:          z.enum(['romance', 'fantasy', 'sci-fi', 'thriller', 'slice-of-life', 'other']),
     status:         z.enum(['ongoing', 'completed', 'hiatus', 'draft']),
     summary:        z.string().max(200),

@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { work, chapterCount = 0, isNew = false } = Astro.props;
-const { title, cover, status, tags } = work.data;
+const { title, author, cover, status, tags } = work.data;
 
 const badgeClass = isNew ? 'badge-new' : status === 'ongoing' ? 'badge-ongoing' : status === 'hiatus' ? 'badge-hiatus' : 'badge-end';
 const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status === 'hiatus' ? '暫停' : '完結';
@@ -25,7 +25,7 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
           <div class="cover-blank">
             <div class="cover-blank-deco">✦</div>
             <div class="cover-blank-title">{title}</div>
-            <div class="cover-blank-author">勒索沃德</div>
+            <div class="cover-blank-author">{author}</div>
           </div>
         )
       }
@@ -34,7 +34,7 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
     <div class="novel-info">
       <div class="novel-name">{title}</div>
       <div class="novel-meta">
-        <span>勒索沃德</span>
+        <span>{author}</span>
         {tags[0] && <><span>·</span><span>{tags[0]}</span></>}
       </div>
     </div>
