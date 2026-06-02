@@ -119,13 +119,13 @@
   }
   .card:hover { background: var(--bg2); }
 
-  /* accent bar on hover */
+  /* accent bar: always visible, brighter on hover */
   .card::before {
     content: '';
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: 2px;
-    opacity: 0;
+    height: 3px;
+    opacity: 0.45;
     transition: opacity 0.25s;
   }
   .card--novel::before  { background: var(--amber-dark); }
@@ -137,10 +137,12 @@
     letter-spacing: 0.22em;
     text-transform: uppercase;
     font-weight: 500;
-    margin-bottom: 18px;
+    display: block;
+    margin: -44px -38px 22px;
+    padding: 18px 38px;
   }
-  .card--novel  .card-tag { color: var(--amber); }
-  .card--resume .card-tag { color: var(--green-bright); }
+  .card--novel  .card-tag { color: var(--amber);       background: #ece3d3; }
+  .card--resume .card-tag { color: var(--green-bright); background: #daeee7; }
 
   .card-title {
     font-family: 'Noto Serif TC', serif;
@@ -197,6 +199,37 @@
   }
   .footer-links a:hover { color: var(--text2); }
 
+  /* ── TOP BAR ── */
+  .page-bar {
+    height: 5px;
+    background: linear-gradient(90deg, var(--amber) 50%, var(--green) 50%);
+  }
+
+  /* ── HERO CHIPS ── */
+  .hero-chips {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 32px;
+  }
+  .hero-chip {
+    height: 5px;
+    border-radius: 2px;
+    flex-shrink: 0;
+  }
+  .hero-chip.amber { width: 48px; background: var(--amber); }
+  .hero-chip.green  { width: 28px; background: var(--green); }
+
+  /* ── SECTION LABEL: colored square bullet ── */
+  .section-label::before {
+    content: '';
+    display: inline-block;
+    width: 8px; height: 8px;
+    background: var(--green);
+    margin-right: 10px;
+    border-radius: 1px;
+    vertical-align: middle;
+  }
+
   /* ── RESPONSIVE ── */
   @media (max-width: 640px) {
     .hero { padding: 72px 0 60px; }
@@ -208,6 +241,8 @@
 </head>
 <body>
 
+<div class="page-bar"></div>
+
 <div class="container">
 
   <!-- HERO -->
@@ -215,6 +250,10 @@
     <p class="hero-label">Personal · 個人</p>
     <h1 class="hero-name">勒索沃德</h1>
     <p class="hero-bio">[嘗試把文字與程式融合。]</p>
+    <div class="hero-chips">
+      <span class="hero-chip amber"></span>
+      <span class="hero-chip green"></span>
+    </div>
     <a href="./resume.pdf" target="_blank" class="btn-pdf">
       <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
         <path d="M2 1h7l3 3v11H2V1z" stroke="currentColor" stroke-width="1.2"/>
