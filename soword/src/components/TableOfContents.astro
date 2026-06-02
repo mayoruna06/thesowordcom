@@ -1,6 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 
+const base = import.meta.env.BASE_URL;
+
 interface Props {
   workSlug: string;
   chapters: CollectionEntry<'chapters'>[];
@@ -20,7 +22,7 @@ const sorted = [...chapters].sort((a, b) => a.data.chapter - b.data.chapter);
       <ol class="toc__list">
         {sorted.map(ch => (
           <li class:list={['toc__item', { 'toc__item--active': ch.slug === currentSlug }]}>
-            <a href={`/works/${workSlug}/${ch.slug}/`} class="toc__link">
+            <a href={`${base}works/${workSlug}/${ch.slug}/`} class="toc__link">
               <span class="toc__chapter-title">{ch.data.title}</span>
               {ch.data.wordCount && (
                 <span class="toc__word-count">{ch.data.wordCount.toLocaleString()} 字</span>
@@ -63,7 +65,6 @@ const sorted = [...chapters].sort((a, b) => a.data.chapter - b.data.chapter);
   }
 
   .toc__item { border-radius: var(--radius-sm); }
-
   .toc__item--active { background: var(--color-surface); }
 
   .toc__link {

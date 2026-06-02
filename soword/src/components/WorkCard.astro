@@ -1,6 +1,8 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 
+const base = import.meta.env.BASE_URL;
+
 interface Props {
   work: CollectionEntry<'works'>;
   chapterCount?: number;
@@ -20,10 +22,10 @@ const genreLabel: Record<string, string> = {
 ---
 
 <article class="work-card">
-  <a href={`/works/${work.slug}/`} class="work-card__link" aria-label={title}>
+  <a href={`${base}works/${work.slug}/`} class="work-card__link" aria-label={title}>
     <div class="work-card__cover">
       {cover
-        ? <img src={`/images/covers/${cover}`} alt="" loading="lazy" />
+        ? <img src={`${base}images/covers/${cover}`} alt="" loading="lazy" />
         : <div class="work-card__cover-placeholder">{title[0]}</div>
       }
     </div>

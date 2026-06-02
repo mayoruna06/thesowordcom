@@ -1,14 +1,16 @@
 ---
+const base = import.meta.env.BASE_URL; // '/soword/'
 const currentPath = Astro.url.pathname;
-const isActive = (path: string) => currentPath === path || currentPath.startsWith(path + '/');
+const isHome   = currentPath === base;
+const isWorks  = currentPath.startsWith(`${base}works/`);
 ---
 
 <header class="site-header">
   <div class="container site-header__inner">
-    <a href="/" class="site-header__logo">小書樓</a>
+    <a href={base} class="site-header__logo">小書樓</a>
     <nav class="site-header__nav" aria-label="主要導覽">
-      <a href="/" class:list={['nav-link', { 'nav-link--active': currentPath === '/' }]}>首頁</a>
-      <a href="/works/" class:list={['nav-link', { 'nav-link--active': isActive('/works') }]}>作品</a>
+      <a href={base} class:list={['nav-link', { 'nav-link--active': isHome }]}>首頁</a>
+      <a href={`${base}works/`} class:list={['nav-link', { 'nav-link--active': isWorks }]}>作品</a>
     </nav>
   </div>
 </header>

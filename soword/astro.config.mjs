@@ -2,7 +2,7 @@ import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 
 export default defineConfig({
-  base: '/',
+  base: '/soword/',
   outDir: '../dist/soword',
   output: 'static',
   site: 'https://thesoword.com',

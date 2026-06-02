@@ -1,4 +1,6 @@
 ---
+const base = import.meta.env.BASE_URL;
+
 interface BreadcrumbItem {
   label: string;
   href?: string;
@@ -13,7 +15,7 @@ const { items } = Astro.props;
 
 <nav class="breadcrumb" aria-label="麵包屑導覽">
   <ol>
-    <li><a href="/">首頁</a></li>
+    <li><a href={base}>首頁</a></li>
     {items.map((item, i) => (
       <li>
         {item.href && i < items.length - 1

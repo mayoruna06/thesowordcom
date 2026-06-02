@@ -32,8 +32,8 @@ const dateStr = (d: Date) =>
 
   <div class="container" style="padding-top: var(--space-6); padding-bottom: var(--space-4);">
     <Breadcrumb items={[
-      { label: '作品', href: '/works/' },
-      { label: work.data.title, href: `/works/${work.slug}/` },
+      { label: '作品', href: `${import.meta.env.BASE_URL}works/` },
+      { label: work.data.title, href: `${import.meta.env.BASE_URL}works/${work.slug}/` },
       { label: title },
     ]} />
   </div>

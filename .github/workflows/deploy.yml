@@ -102,7 +102,7 @@ jobs:
 
       - name: Sync HTML files (no-cache)
         run: |
-          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/soword/ \
             --exclude "*" \
             --include "*.html" \
             --cache-control "public, max-age=0, must-revalidate" \
@@ -111,7 +111,7 @@ jobs:
 
       - name: Sync CSS and JS (long cache)
         run: |
-          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/soword/ \
             --exclude "*" \
             --include "*.css" \
             --include "*.js" \
@@ -120,7 +120,7 @@ jobs:
 
       - name: Sync images and fonts
         run: |
-          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/soword/ \
             --exclude "*" \
             --include "*.jpg" \
             --include "*.jpeg" \
@@ -135,7 +135,7 @@ jobs:
 
       - name: Sync remaining files
         run: |
-          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/soword/ \
             --exclude "*.html" \
             --exclude "*.css" \
             --exclude "*.js" \
@@ -151,9 +151,9 @@ jobs:
             --exclude "*.woff2" \
             --cache-control "public, max-age=3600"
 
-      - name: Invalidate CloudFront HTML cache
+      - name: Invalidate CloudFront cache
         run: |
-          PATHS="/*.html /works/* /"
+          PATHS="/soword/* /soword/"
           if [ "${{ github.event.inputs.invalidate_all }}" = "true" ]; then
             PATHS="/*"
           fi
