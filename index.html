@@ -199,6 +199,83 @@
   }
   .footer-links a:hover { color: var(--text2); }
 
+  /* ── HERO BUTTONS ── */
+  .hero-btns {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .btn-pdf {
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  /* ── PDF PREVIEW MODAL ── */
+  .pdf-modal {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.88);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.22s;
+  }
+  .pdf-modal.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .pdf-modal-inner {
+    width: min(820px, 94vw);
+    height: min(88vh, 1060px);
+    background: var(--bg2);
+    border: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .pdf-modal-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    flex-shrink: 0;
+  }
+  .pdf-modal-title {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    color: var(--text3);
+    text-transform: uppercase;
+  }
+  .pdf-modal-actions { display: flex; gap: 8px; align-items: center; }
+  .pdf-modal-dl {
+    font-size: 11px;
+    color: var(--green-bright);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    border: 1px solid rgba(40,168,112,0.35);
+    padding: 4px 12px;
+    border-radius: 3px;
+    transition: all 0.15s;
+  }
+  .pdf-modal-dl:hover { background: rgba(40,168,112,0.15); border-color: var(--green-bright); }
+  .pdf-modal-close {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--text3);
+    width: 28px; height: 28px;
+    cursor: pointer;
+    font-size: 15px;
+    border-radius: 3px;
+    transition: all 0.15s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pdf-modal-close:hover { border-color: var(--text2); color: var(--text); }
+  .pdf-frame { flex: 1; border: none; width: 100%; background: #fff; }
+
   /* ── TOP BAR ── */
   .page-bar {
     height: 5px;
@@ -254,14 +331,23 @@
       <span class="hero-chip amber"></span>
       <span class="hero-chip green"></span>
     </div>
-    <a href="./resume.pdf" target="_blank" class="btn-pdf">
-      <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
-        <path d="M2 1h7l3 3v11H2V1z" stroke="currentColor" stroke-width="1.2"/>
-        <path d="M9 1v3h3" stroke="currentColor" stroke-width="1.2"/>
-        <path d="M4 8h6M4 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-      </svg>
-      下載履歷 PDF
-    </a>
+    <div class="hero-btns">
+      <button class="btn-pdf" onclick="openPDF()">
+        <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
+          <path d="M2 1h7l3 3v11H2V1z" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M9 1v3h3" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M4 8h6M4 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        預覽履歷
+      </button>
+      <a href="./resume.pdf" download class="btn-pdf">
+        <svg width="12" height="14" viewBox="0 0 12 14" fill="none">
+          <path d="M6 1v9M2 7l4 4 4-4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M1 13h10" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+        </svg>
+        下載 PDF
+      </a>
+    </div>
   </section>
 
   <!-- WORKS -->
@@ -300,6 +386,39 @@
     </div>
   </div>
 </footer>
+
+<!-- PDF Preview Modal -->
+<div id="pdf-modal" class="pdf-modal" onclick="closePDFIfBg(event)">
+  <div class="pdf-modal-inner">
+    <div class="pdf-modal-bar">
+      <span class="pdf-modal-title">履歷預覽</span>
+      <div class="pdf-modal-actions">
+        <a href="./resume.pdf" download class="pdf-modal-dl">↓ 下載</a>
+        <button class="pdf-modal-close" onclick="closePDF()">✕</button>
+      </div>
+    </div>
+    <iframe id="pdf-frame" class="pdf-frame" title="履歷預覽"></iframe>
+  </div>
+</div>
+
+<script>
+function openPDF() {
+  const frame = document.getElementById('pdf-frame');
+  if (!frame.src || frame.src === window.location.href) {
+    frame.src = './resume.pdf';
+  }
+  document.getElementById('pdf-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closePDF() {
+  document.getElementById('pdf-modal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+function closePDFIfBg(e) {
+  if (e.target === e.currentTarget) closePDF();
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closePDF(); });
+</script>
 
 </body>
 </html>
