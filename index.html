@@ -190,14 +190,44 @@
     display: flex;
     gap: 24px;
   }
-  .footer-links a {
+  .footer-links a, .footer-links .btn-copy-email {
     font-size: 12px;
     color: var(--text3);
     text-decoration: none;
     letter-spacing: 0.06em;
     transition: color 0.2s;
   }
-  .footer-links a:hover { color: var(--text2); }
+  .footer-links a:hover, .footer-links .btn-copy-email:hover { color: var(--text2); }
+  .btn-copy-email {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  #copy-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%) translateY(8px);
+    background: var(--bg3);
+    border: 1px solid var(--line);
+    color: var(--text2);
+    padding: 8px 18px;
+    border-radius: 4px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    white-space: nowrap;
+    z-index: 3000;
+  }
+  #copy-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
 
   /* ── HERO BUTTONS ── */
   .hero-btns {
@@ -380,12 +410,14 @@
     <div class="footer-inner">
       <span class="footer-name">勒索沃德</span>
       <div class="footer-links">
-        <a href="mailto:aa9966888@gmail.com">Email</a>
+        <button class="btn-copy-email" onclick="copyEmail()">Email</button>
         <a href="https://github.com/mayoruna06" target="_blank">GitHub</a>
       </div>
     </div>
   </div>
 </footer>
+
+<div id="copy-toast">✓ 已複製信箱</div>
 
 <!-- PDF Preview Modal -->
 <div id="pdf-modal" class="pdf-modal" onclick="closePDFIfBg(event)">
@@ -418,6 +450,17 @@ function closePDFIfBg(e) {
   if (e.target === e.currentTarget) closePDF();
 }
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closePDF(); });
+
+function copyEmail() {
+  const email = ['aa9966888', 'gmail.com'].join('@');
+  navigator.clipboard.writeText(email).then(() => {
+    const t = document.getElementById('copy-toast');
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2200);
+  }).catch(() => {
+    window.location.href = 'mailto:' + email;
+  });
+}
 </script>
 
 </body>
