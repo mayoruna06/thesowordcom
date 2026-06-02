@@ -165,6 +165,9 @@ body { background: #f0f4f2; font-family: 'Noto Sans TC', sans-serif; min-height:
 
 #save-toast { position:fixed; bottom:24px; right:24px; background:#1a7a52; color:#fff; padding:10px 20px; border-radius:8px; font-size:13px; letter-spacing:1px; box-shadow:0 4px 20px rgba(0,0,0,0.2); opacity:0; transform:translateY(10px); transition:all 0.3s; pointer-events:none; z-index:9999; }
 #save-toast.show { opacity:1; transform:translateY(0); }
+#restore-banner { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); background:#1c2030; border:1px solid rgba(51,255,170,0.3); color:#c8ccd8; padding:10px 16px; border-radius:10px; font-size:12px; display:none; align-items:center; gap:10px; box-shadow:0 4px 20px rgba(0,0,0,0.35); z-index:9998; white-space:nowrap; }
+#restore-banner .rb-load { background:rgba(51,255,170,0.15); border:1px solid rgba(51,255,170,0.4); color:#33FFAA; border-radius:6px; padding:4px 14px; font-size:11px; cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
+#restore-banner .rb-dismiss { background:rgba(255,255,255,0.07); border:1px solid rgba(255,255,255,0.15); color:#888; border-radius:6px; padding:4px 14px; font-size:11px; cursor:pointer; font-family:'Noto Sans TC',sans-serif; }
 
 /* 浮動格式列 */
 #format-bar { position: fixed; z-index: 9000; background: #1c2030; border: 1px solid #33FFAA44; border-radius: 10px; padding: 6px 10px; display: none; align-items: center; gap: 6px; box-shadow: 0 6px 24px rgba(0,0,0,0.4); pointer-events: auto; user-select: none; }
@@ -323,6 +326,7 @@ body { background: #f0f4f2; font-family: 'Noto Sans TC', sans-serif; min-height:
     <button class="fp-btn" onclick="addPage()">＋ 新增頁面</button>
     <div class="fp-sep"></div>
     <button class="fp-btn" style="background:rgba(51,170,255,0.12);color:#55ccff;border-color:#33aaff55;" onclick="saveResume()">💾 儲存草稿</button>
+    <button class="fp-btn" style="background:rgba(255,100,100,0.1);color:#ff9999;border-color:#ff444433;" onclick="newResume()">✕ 新建履歷</button>
     <div class="fp-sep"></div>
     <button class="fp-btn primary" onclick="exportHTML()">⬇ 匯出 HTML</button>
     <button class="fp-btn orange" id="btn-export-pdf" onclick="exportPDF()">📄 匯出 PDF</button>
@@ -574,6 +578,11 @@ body { background: #f0f4f2; font-family: 'Noto Sans TC', sans-serif; min-height:
 </div>
 
 <div id="save-toast">✓ 匯出成功</div>
+<div id="restore-banner">
+  <span>發現上次儲存的草稿，要載入嗎？</span>
+  <button class="rb-load" onclick="confirmLoad()">載入</button>
+  <button class="rb-dismiss" onclick="dismissBanner()">忽略</button>
+</div>
 
 <div id="img-bar">
   <span class="fmt-label">寬度</span>
@@ -1618,8 +1627,14 @@ function loadResume() {
   let d;
   try { d = JSON.parse(localStorage.getItem('bamboo_resume_v1') || 'null'); } catch(e) { return; }
   if (!d || d.v !== 1) return;
+  document.getElementById('restore-banner').style.display = 'flex';
+}
 
-  // 頭像
+function applyResume() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem('bamboo_resume_v1') || 'null'); } catch(e) { return; }
+  if (!d || d.v !== 1) return;
+
   if (d.avatarBg) {
     avatarDisplay.style.backgroundImage = d.avatarBg;
     avatarDisplay.style.cursor = 'grab';
@@ -1640,26 +1655,36 @@ function loadResume() {
   avatarDisplay.style.backgroundPosition = `${avatarBgX}% ${avatarBgY}%`;
   avatarDisplay.style.backgroundSize = avatarZoom + '%';
 
-  // 文字與聯絡資訊（不替換 avatarDisplay 元素，保留事件綁定）
   const q = (s) => document.querySelector(s);
   const qi = (id) => document.getElementById(id);
   if (d.name && q('.name-block h1')) q('.name-block h1').innerHTML = d.name;
   if (d.titleTag && q('.name-block .title-tag')) q('.name-block .title-tag').innerHTML = d.titleTag;
   if (d.contacts && qi('contact-row')) qi('contact-row').innerHTML = d.contacts;
-
-  // 側欄與主要內容
   if (d.sidebar && q('.sidebar')) q('.sidebar').innerHTML = d.sidebar;
   if (d.mainContent && q('.main-content')) q('.main-content').innerHTML = d.mainContent;
 
-  // 重啟拖曳排序與圖片調整
   document.querySelectorAll('.deletable').forEach(enableSortable);
   document.querySelectorAll('.img-wrap').forEach(initImgWrap);
 
-  // 套用主題
   if (d.theme) {
     const pill = document.querySelector(`.theme-pill[data-theme="${d.theme}"]`);
     if (pill) pill.click();
   }
+}
+
+function dismissBanner() {
+  document.getElementById('restore-banner').style.display = 'none';
+}
+
+function confirmLoad() {
+  dismissBanner();
+  applyResume();
+}
+
+function newResume() {
+  if (!confirm('確定要清除目前的履歷並重新開始嗎？\n（此操作無法復原）')) return;
+  localStorage.removeItem('bamboo_resume_v1');
+  location.reload();
 }
 
 /* ── 模板切換 ── */
