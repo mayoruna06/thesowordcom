@@ -1,55 +1,22 @@
 :root {
-  /* 色票 */
-  --color-bg:          #faf9f6;
-  --color-bg-card:     #ffffff;
-  --color-surface:     #f0ede6;
-  --color-border:      #e0dbd0;
-  --color-text:        #2d2823;
-  --color-text-muted:  #7a7167;
-  --color-accent:      #8b5e3c;
-  --color-accent-hover:#6e4a2d;
-  --color-link:        #4a7a9b;
-  --color-link-hover:  #2d5a7a;
+  --bg:      #f7f5f0;
+  --bg2:     #eeeae0;
+  --ink:     #1a1714;
+  --ink2:    #5a5550;
+  --ink3:    #9a948e;
+  --accent:  #7a6a52;
+  --accent2: #c4a882;
+  --warm:    #e8e0d0;
+  --line:    #d8d0c0;
+  --tag-bg:  #ede8df;
+  --white:   #fdfcfa;
+  --red:     #b05a4a;
+  --green:   #5a8060;
 
-  /* 字型 */
-  --font-ui:   system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-body: Georgia, "Times New Roman", "Noto Serif TC", "Source Han Serif TC", serif;
-  --font-mono: "Menlo", "Consolas", monospace;
+  --font-serif: 'Noto Serif TC', Georgia, serif;
+  --font-sans:  'Noto Sans TC', system-ui, sans-serif;
+  --font-deco:  'Playfair Display', Georgia, serif;
 
-  /* 字級 */
-  --text-xs:   0.75rem;
-  --text-sm:   0.875rem;
-  --text-base: 1rem;
-  --text-lg:   1.125rem;
-  --text-xl:   1.25rem;
-  --text-2xl:  1.5rem;
-  --text-3xl:  1.875rem;
-  --text-4xl:  2.25rem;
-
-  /* 間距 */
-  --space-1:  0.25rem;
-  --space-2:  0.5rem;
-  --space-3:  0.75rem;
-  --space-4:  1rem;
-  --space-6:  1.5rem;
-  --space-8:  2rem;
-  --space-12: 3rem;
-  --space-16: 4rem;
-  --space-24: 6rem;
-
-  /* 版面 */
-  --max-width-content: 680px;
-  --max-width-wide:    960px;
-
-  /* 圓角 */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-
-  /* 陰影 */
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.10);
-
-  /* 動畫 */
-  --transition: 150ms ease;
+  --max-w: 1100px;
+  --transition: 0.2s ease;
 }

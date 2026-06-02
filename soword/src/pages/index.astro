@@ -3,74 +3,137 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import WorkCard from '@components/WorkCard.astro';
+import Sidebar from '@components/Sidebar.astro';
 import { getCollection } from 'astro:content';
 
 const allWorks = await getCollection('works', ({ data }) => data.status !== 'draft');
 const allChapters = await getCollection('chapters');
+const announcements = await getCollection('announcements').then(a =>
+  a.sort((x, y) => y.data.publishedAt.getTime() - x.data.publishedAt.getTime())
+);
 
 const chapterCountByWork = allChapters.reduce<Record<string, number>>((acc, ch) => {
   acc[ch.data.work] = (acc[ch.data.work] ?? 0) + 1;
   return acc;
 }, {});
 
-const works = allWorks.sort((a, b) =>
-  b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
-);
+// 30 天內發布 = NEW
+const thirtyDaysAgo = new Date(Date.now() - 30 * 86400_000);
+const isNew = (w: typeof allWorks[0]) => w.data.publishedAt > thirtyDaysAgo;
 
-const featured = works.filter(w => w.data.featured);
+const ongoingWorks  = allWorks.filter(w => w.data.status === 'ongoing' || w.data.status === 'hiatus');
+const completedWorks = allWorks.filter(w => w.data.status === 'completed');
 ---
 
 <BaseLayout title="小書樓">
   <Header slot="header" />
   <Footer slot="footer" />
 
-  <div class="container">
-    <header class="page-header">
-      <h1 class="page-header__title">小書樓</h1>
-      <p class="page-header__desc">勒索沃德的創作基地</p>
-    </header>
+  <!-- Hero Banner -->
+  <div class="hero">
+    <div class="hero-title">Novel Library</div>
+    <div class="hero-h1">以文字為橋<br>跨越千山萬水</div>
+    <div class="hero-sub">精選連載 · 完結珍藏 · 每日更新</div>
+  </div>
 
-    {works.length === 0
+  <div class="container">
+    {allWorks.length === 0
       ? (
         <div class="empty-state">
-          <div class="empty-state__icon">📚</div>
-          <p class="empty-state__text">作品即將到來，敬請期待</p>
+          <div class="empty-icon">📚</div>
+          <p>作品即將到來，敬請期待</p>
         </div>
       )
       : (
-        <>
-          {featured.length > 0 && (
-            <section>
-              <h2 class="section-title">精選作品</h2>
-              <div class="works-grid">
-                {featured.map(work => (
-                  <WorkCard work={work} chapterCount={chapterCountByWork[work.slug] ?? 0} />
-                ))}
+        <div class="layout">
+          <main>
+            {ongoingWorks.length > 0 && (
+              <div class="section-wrap">
+                <div class="section-title">連載中</div>
+                <div class="novel-grid">
+                  {ongoingWorks.map(w => (
+                    <WorkCard work={w} chapterCount={chapterCountByWork[w.slug] ?? 0} isNew={isNew(w)} />
+                  ))}
+                </div>
               </div>
-            </section>
-          )}
+            )}
 
-          <section>
-            <h2 class="section-title">{featured.length > 0 ? '全部作品' : '作品列表'}</h2>
-            <div class="works-grid">
-              {works.map(work => (
-                <WorkCard work={work} chapterCount={chapterCountByWork[work.slug] ?? 0} />
-              ))}
-            </div>
-          </section>
-        </>
+            {completedWorks.length > 0 && (
+              <div class="section-wrap">
+                <div class="section-title">已完結</div>
+                <div class="novel-grid">
+                  {completedWorks.map(w => (
+                    <WorkCard work={w} chapterCount={chapterCountByWork[w.slug] ?? 0} />
+                  ))}
+                </div>
+              </div>
+            )}
+          </main>
+
+          <Sidebar
+            works={allWorks}
+            chapterCountByWork={chapterCountByWork}
+            announcements={announcements}
+          />
+        </div>
       )
     }
   </div>
 </BaseLayout>
 
 <style>
-  .section-title {
-    font-size: var(--text-xl);
-    font-weight: 700;
-    margin-bottom: var(--space-4);
-    padding-bottom: var(--space-2);
-    border-bottom: 2px solid var(--color-accent);
-    display: inline-block;
+  /* ── Hero ── */
+  .hero {
+    background: linear-gradient(135deg, #2c2520 0%, #4a3d30 60%, #6b5740 100%);
+    padding: 60px 40px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+    pointer-events: none;
+  }
+  .hero-title {
+    font-family: var(--font-deco);
+    font-style: italic;
+    font-size: 13px;
+    color: var(--accent2);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    position: relative;
+  }
+  .hero-h1 {
+    font-family: var(--font-serif);
+    font-size: 36px;
+    font-weight: 300;
+    color: #f0ebe3;
+    letter-spacing: 0.15em;
+    line-height: 1.4;
+    position: relative;
+  }
+  .hero-sub {
+    margin-top: 16px;
+    font-size: 13px;
+    color: rgba(240,235,227,0.5);
+    letter-spacing: 0.1em;
+    position: relative;
+  }
+
+  /* ── 空狀態 ── */
+  .empty-state {
+    text-align: center;
+    padding: 100px 0;
+    color: var(--ink3);
+  }
+  .empty-icon { font-size: 3rem; margin-bottom: 16px; }
+  .empty-state p { font-size: 15px; letter-spacing: 0.08em; }
+
+  @media (max-width: 768px) {
+    .hero { padding: 40px 20px; }
+    .hero-h1 { font-size: 28px; }
   }
 </style>

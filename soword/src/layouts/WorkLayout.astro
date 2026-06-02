@@ -2,24 +2,31 @@
 import BaseLayout from './BaseLayout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import Breadcrumb from '@components/Breadcrumb.astro';
+import TableOfContents from '@components/TableOfContents.astro';
 import type { CollectionEntry } from 'astro:content';
+
+const base = import.meta.env.BASE_URL;
 
 interface Props {
   work: CollectionEntry<'works'>;
+  chapters: CollectionEntry<'chapters'>[];
 }
 
-const { work } = Astro.props;
-const { title, summary, cover, genre, status, tags, contentWarning } = work.data;
+const { work, chapters } = Astro.props;
+const { title, summary, cover, genre, status, tags, contentWarning, publishedAt, updatedAt } = work.data;
 
 const statusLabel: Record<string, string> = {
-  ongoing: '連載中', completed: '已完結', hiatus: '暫停更新', draft: '草稿',
+  ongoing: '連載中', completed: '已完結', hiatus: '暫停更新',
 };
-
 const genreLabel: Record<string, string> = {
   romance: '言情', fantasy: '奇幻', 'sci-fi': '科幻',
   thriller: '懸疑', 'slice-of-life': '日常', other: '其他',
 };
+
+const sorted = [...chapters].sort((a, b) => a.data.chapter - b.data.chapter);
+const firstChapter = sorted[0];
+const totalWords = chapters.reduce((s, ch) => s + (ch.data.wordCount ?? 0), 0);
+const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
 ---
 
 <BaseLayout
@@ -30,97 +37,327 @@ const genreLabel: Record<string, string> = {
   <Header slot="header" />
   <Footer slot="footer" />
 
-  <div class="container" style="padding-top: var(--space-6);">
-    <Breadcrumb items={[{ label: '作品', href: `${import.meta.env.BASE_URL}works/` }, { label: title }]} />
-  </div>
+  <!-- Detail Hero -->
+  <div class="detail-hero">
+    <div class="container">
+      <div class="detail-inner">
 
-  <div class="work-page">
-    <div class="container work-page__inner">
-      <aside class="work-page__cover">
-        {cover
-          ? <img src={`/images/covers/${cover}`} alt={`${title} 封面`} class="cover-img" />
-          : <div class="cover-placeholder">{title[0]}</div>
-        }
-        <span class:list={['badge', `badge--${status}`]}>{statusLabel[status]}</span>
-      </aside>
-
-      <div class="work-page__info">
-        <h1 class="work-page__title">{title}</h1>
-        <div class="work-page__meta">
-          <span>{genreLabel[genre]}</span>
-          {tags.map(tag => <span class="tag">{tag}</span>)}
+        <!-- 封面 -->
+        <div class="detail-cover">
+          {cover
+            ? <img src={`${base}images/covers/${cover}`} alt={title} />
+            : (
+              <div class="detail-cover-blank">
+                <div class="ct">{title}</div>
+              </div>
+            )
+          }
         </div>
-        {contentWarning.length > 0 && (
-          <p class="content-warning">⚠️ 內容警示：{contentWarning.join('、')}</p>
-        )}
-        <p class="work-page__summary">{summary}</p>
+
+        <!-- 資訊 -->
+        <div class="detail-meta">
+          <h1>{title}</h1>
+          <div class="author-line">作者：勒索沃德　最後更新：{lastDate}</div>
+
+          {tags.length > 0 && (
+            <div class="detail-tags">
+              {tags.map(t => <span class="detail-tag">{t}</span>)}
+            </div>
+          )}
+
+          {contentWarning.length > 0 && (
+            <div class="content-warning">⚠ 內容警示：{contentWarning.join('、')}</div>
+          )}
+
+          <div class="detail-stats">
+            <div class="ds-item">
+              <span class="ds-num">{chapters.length}</span>
+              <span class="ds-label">章節數</span>
+            </div>
+            {totalWords > 0 && (
+              <div class="ds-item">
+                <span class="ds-num">{(totalWords / 10000).toFixed(1)}</span>
+                <span class="ds-label">萬字</span>
+              </div>
+            )}
+            <div class="ds-item">
+              <span class="ds-num">{statusLabel[status] ?? status}</span>
+              <span class="ds-label">狀態</span>
+            </div>
+          </div>
+
+          <div class="detail-desc">
+            <slot />
+          </div>
+
+          <div class="detail-actions">
+            {firstChapter
+              ? <a class="btn-read" href={`${base}works/${work.slug}/${firstChapter.slug}/`}>▶ 從頭閱讀</a>
+              : <span class="btn-read btn-read--disabled">尚無章節</span>
+            }
+            {firstChapter && (
+              <button class="btn-read-cont" id="btn-continue" data-work={work.slug}>繼續閱讀</button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
 
-    <div class="container" style="padding-top: var(--space-8);">
-      <slot />
+    <!-- Tabs -->
+    <div class="detail-tabs">
+      <div class="container">
+        <button class="tab-btn active" data-tab="catalogue">目錄</button>
+        <button class="tab-btn" data-tab="info">詳情</button>
+      </div>
     </div>
+  </div>
+
+  <!-- Tab: 目錄 -->
+  <div id="tab-catalogue" class="catalogue-wrap container fade-in">
+    <TableOfContents workSlug={work.slug} chapters={chapters} />
+  </div>
+
+  <!-- Tab: 詳情 -->
+  <div id="tab-info" class="info-wrap container fade-in" style="display:none">
+    <table class="info-table">
+      <tbody>
+        {[
+          ['書名', title],
+          ['作者', '勒索沃德'],
+          ['類型', genreLabel[genre] ?? genre],
+          ['狀態', statusLabel[status] ?? status],
+          ['標籤', tags.join('、') || '—'],
+          ['章節', `${chapters.length} 章`],
+          ['字數', totalWords > 0 ? `約 ${(totalWords / 10000).toFixed(1)} 萬字` : '—'],
+          ['最近更新', lastDate],
+        ].map(([k, v]) => (
+          <tr>
+            <td class="info-key">{k}</td>
+            <td class="info-val">{v}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   </div>
 </BaseLayout>
 
 <style>
-  .work-page { padding-bottom: var(--space-16); }
+  /* ── Detail Hero ── */
+  .detail-hero {
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+  }
 
-  .work-page__inner {
+  .detail-inner {
     display: grid;
-    grid-template-columns: 200px 1fr;
-    gap: var(--space-8);
-    padding-top: var(--space-8);
+    grid-template-columns: 180px 1fr;
+    gap: 40px;
+    padding: 40px 0;
+    align-items: start;
   }
 
-  .cover-img {
-    width: 200px;
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-md);
+  .detail-cover {
+    aspect-ratio: 2/3;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.15);
   }
 
-  .cover-placeholder {
-    width: 200px;
-    height: 280px;
-    background: var(--color-surface);
-    border-radius: var(--radius-md);
+  .detail-cover img { width: 100%; height: 100%; object-fit: cover; }
+
+  .detail-cover-blank {
+    width: 100%; height: 100%;
+    background: var(--bg2);
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    font-size: 4rem;
-    color: var(--color-text-muted);
-    border: 1px solid var(--color-border);
+    padding: 16px;
+    position: relative;
+  }
+  .detail-cover-blank::before {
+    content: '';
+    position: absolute;
+    top: 6px; left: 6px; right: 6px; bottom: 6px;
+    border: 1px solid var(--line);
+  }
+  .detail-cover-blank .ct {
+    font-family: var(--font-serif);
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+    letter-spacing: 0.12em;
+    text-align: center;
+    line-height: 1.6;
+    z-index: 1;
   }
 
-  .work-page__cover { display: flex; flex-direction: column; gap: var(--space-3); align-items: flex-start; }
+  .detail-meta h1 {
+    font-family: var(--font-serif);
+    font-size: 28px;
+    font-weight: 500;
+    letter-spacing: 0.12em;
+    color: var(--ink);
+    margin-bottom: 6px;
+  }
 
-  .work-page__title { font-size: var(--text-3xl); font-weight: 700; margin-bottom: var(--space-3); }
+  .author-line {
+    font-size: 14px;
+    color: var(--ink3);
+    margin-bottom: 16px;
+    letter-spacing: 0.08em;
+  }
 
-  .work-page__meta {
-    display: flex; flex-wrap: wrap; gap: var(--space-2);
-    margin-bottom: var(--space-4);
-    font-size: var(--text-sm); color: var(--color-text-muted);
-    align-items: center;
+  .detail-tags {
+    display: flex; gap: 8px; flex-wrap: wrap;
+    margin-bottom: 16px;
+  }
+  .detail-tag {
+    font-size: 12px;
+    padding: 3px 10px;
+    background: var(--tag-bg);
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    color: var(--accent);
+    letter-spacing: 0.06em;
   }
 
   .content-warning {
-    font-size: var(--text-sm);
-    color: #c0392b;
-    background: #fdf2f2;
-    border: 1px solid #f5c6cb;
-    padding: var(--space-2) var(--space-3);
-    border-radius: var(--radius-sm);
-    margin-bottom: var(--space-4);
+    font-size: 12px;
+    color: var(--red);
+    margin-bottom: 12px;
   }
 
-  .work-page__summary {
-    font-size: var(--text-lg);
-    line-height: 1.8;
-    color: var(--color-text-muted);
+  .detail-stats {
+    display: flex;
+    gap: 24px;
+    margin-bottom: 20px;
   }
+  .ds-item { text-align: center; }
+  .ds-num {
+    font-family: var(--font-deco);
+    font-size: 22px;
+    color: var(--ink);
+    display: block;
+  }
+  .ds-label { font-size: 11px; color: var(--ink3); letter-spacing: 0.1em; }
+
+  .detail-desc {
+    font-size: 14px;
+    line-height: 1.9;
+    color: var(--ink2);
+    letter-spacing: 0.04em;
+    margin-bottom: 24px;
+    max-width: 560px;
+  }
+  .detail-desc :global(p) { margin-bottom: 0.8em; }
+
+  .detail-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+
+  .btn-read {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--ink);
+    color: var(--white);
+    font-family: var(--font-serif);
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    padding: 12px 28px;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+    transition: background var(--transition), transform 0.15s;
+    text-decoration: none;
+  }
+  .btn-read:hover { background: var(--accent); transform: translateY(-1px); text-decoration: none; color: var(--white); }
+  .btn-read--disabled { background: var(--ink3); cursor: default; }
+  .btn-read--disabled:hover { transform: none; }
+
+  .btn-read-cont {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: transparent;
+    color: var(--ink2);
+    font-family: var(--font-serif);
+    font-size: 14px;
+    letter-spacing: 0.12em;
+    padding: 12px 20px;
+    border-radius: 3px;
+    border: 1px solid var(--line);
+    cursor: pointer;
+    transition: border-color var(--transition);
+  }
+  .btn-read-cont:hover { border-color: var(--accent); }
+
+  /* ── Tabs ── */
+  .detail-tabs {
+    border-top: 1px solid var(--line);
+  }
+  .detail-tabs .container {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: -1px;
+  }
+
+  .tab-btn {
+    font-family: var(--font-serif);
+    font-size: 14px;
+    letter-spacing: 0.1em;
+    color: var(--ink3);
+    padding: 14px 24px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+    transition: color var(--transition);
+  }
+  .tab-btn.active { color: var(--ink); border-bottom-color: var(--ink); }
+  .tab-btn:hover { color: var(--ink2); }
+
+  /* ── Tab Content ── */
+  .catalogue-wrap { padding: 32px 0 80px; }
+
+  .info-wrap { padding: 32px 0 80px; }
+
+  .info-table { width: 100%; max-width: 680px; border-collapse: collapse; font-size: 13px; }
+  .info-table tr { border-bottom: 1px solid var(--line); }
+  .info-key { padding: 12px 0; color: var(--ink3); width: 100px; letter-spacing: 0.06em; }
+  .info-val { padding: 12px 0; color: var(--ink2); }
 
   @media (max-width: 640px) {
-    .work-page__inner { grid-template-columns: 1fr; }
-    .cover-img, .cover-placeholder { width: 140px; height: 196px; }
+    .detail-inner { grid-template-columns: 130px 1fr; gap: 20px; }
+    .detail-meta h1 { font-size: 22px; }
   }
 </style>
+
+<script>
+  // Tab 切換
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = (btn as HTMLElement).dataset.tab!;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      ['catalogue', 'info'].forEach(id => {
+        const el = document.getElementById(`tab-${id}`);
+        if (el) el.style.display = id === tab ? '' : 'none';
+      });
+    });
+  });
+
+  // 繼續閱讀：從 localStorage 取上次章節
+  const continueBtn = document.getElementById('btn-continue') as HTMLButtonElement | null;
+  if (continueBtn) {
+    const workSlug = continueBtn.dataset.work!;
+    const lastSlug = localStorage.getItem(`last-chapter-${workSlug}`);
+    const base = import.meta.env.BASE_URL;
+    if (lastSlug) {
+      continueBtn.onclick = () => location.href = `${base}works/${workSlug}/${lastSlug}/`;
+    } else {
+      continueBtn.style.display = 'none';
+    }
+  }
+</script>

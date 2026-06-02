@@ -1,0 +1,117 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+const base = import.meta.env.BASE_URL;
+
+interface Props {
+  works: CollectionEntry<'works'>[];
+  chapterCountByWork: Record<string, number>;
+  announcements: CollectionEntry<'announcements'>[];
+}
+
+const { works, chapterCountByWork, announcements } = Astro.props;
+
+// 排行：章節數最多的前 5 部
+const ranked = [...works]
+  .sort((a, b) => (chapterCountByWork[b.slug] ?? 0) - (chapterCountByWork[a.slug] ?? 0))
+  .slice(0, 5);
+
+// 標籤雲：聚合所有標籤
+const allTags = [...new Set(works.flatMap(w => w.data.tags))];
+
+const dateStr = (d: Date) =>
+  d.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
+---
+
+<aside class="sidebar">
+
+  {ranked.length > 0 && (
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">作品排行</div>
+      <div class="rank-list">
+        {ranked.map((work, i) => (
+          <a href={`${base}works/${work.slug}/`} class="rank-item">
+            <span class:list={['rank-num', { top: i < 3 }]}>{i + 1}</span>
+            <span class="rank-title">{work.data.title}</span>
+            <span class="rank-count">{chapterCountByWork[work.slug] ?? 0} 章</span>
+          </a>
+        ))}
+      </div>
+    </div>
+  )}
+
+  <div class="sidebar-card">
+    <div class="sidebar-card-title">最新公告</div>
+    {announcements.length > 0
+      ? (
+        <div class="announce-list">
+          {announcements.slice(0, 5).map(ann => (
+            <div class="announce-item">
+              <span class="ann-date">{dateStr(ann.data.publishedAt)}</span>
+              <span class="ann-title">{ann.data.title}</span>
+            </div>
+          ))}
+        </div>
+      )
+      : <p class="sidebar-empty">暫無公告</p>
+    }
+  </div>
+
+  {allTags.length > 0 && (
+    <div class="sidebar-card">
+      <div class="sidebar-card-title">標籤分類</div>
+      <div class="tag-cloud">
+        {allTags.map(t => <span class="tag">{t}</span>)}
+      </div>
+    </div>
+  )}
+
+</aside>
+
+<style>
+  .rank-list { display: flex; flex-direction: column; }
+
+  .rank-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--bg2);
+    text-decoration: none;
+    color: inherit;
+    transition: color var(--transition);
+  }
+  .rank-item:last-child { border-bottom: none; }
+  .rank-item:hover .rank-title { color: var(--accent); }
+
+  .rank-num {
+    font-family: var(--font-deco);
+    font-size: 16px;
+    color: var(--accent2);
+    width: 20px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .rank-num.top { color: var(--red); }
+
+  .rank-title { font-size: 13px; color: var(--ink); flex: 1; line-height: 1.3; }
+  .rank-count  { font-size: 11px; color: var(--ink3); white-space: nowrap; }
+
+  .announce-list { display: flex; flex-direction: column; }
+
+  .announce-item {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--bg2);
+  }
+  .announce-item:last-child { border-bottom: none; }
+
+  .ann-date  { font-size: 11px; color: var(--ink3); white-space: nowrap; letter-spacing: 0.06em; }
+  .ann-title { font-size: 13px; color: var(--ink2); line-height: 1.4; }
+
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+
+  .sidebar-empty { font-size: 13px; color: var(--ink3); padding: 4px 0; }
+</style>

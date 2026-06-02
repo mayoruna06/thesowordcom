@@ -1,71 +1,103 @@
 ---
-const base = import.meta.env.BASE_URL; // '/soword/'
+const base = import.meta.env.BASE_URL;
 const currentPath = Astro.url.pathname;
-const isHome   = currentPath === base;
-const isWorks  = currentPath.startsWith(`${base}works/`);
+const isHome  = currentPath === base;
+const isWorks = currentPath.startsWith(`${base}works/`);
 ---
 
 <header class="site-header">
-  <div class="container site-header__inner">
-    <a href={base} class="site-header__logo">小書樓</a>
-    <nav class="site-header__nav" aria-label="主要導覽">
-      <a href={base} class:list={['nav-link', { 'nav-link--active': isHome }]}>首頁</a>
-      <a href={`${base}works/`} class:list={['nav-link', { 'nav-link--active': isWorks }]}>作品</a>
-    </nav>
+  <a class="logo" href={base}>
+    <div class="logo-dot"></div>
+    小書樓
+  </a>
+  <nav>
+    <a href={base} class:list={{ active: isHome }}>首頁</a>
+    <a href={`${base}works/`} class:list={{ active: isWorks }}>作品</a>
+  </nav>
+  <div class="search-wrap" role="search">
+    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+    </svg>
+    <input type="text" placeholder="搜尋小說、作者…" aria-label="搜尋" />
   </div>
 </header>
 
 <style>
   .site-header {
-    background: #fff;
-    border-bottom: 1px solid var(--color-border);
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
     position: sticky;
     top: 0;
     z-index: 100;
   }
 
-  .site-header__inner {
+  .logo {
+    font-family: var(--font-serif);
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: var(--ink);
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    height: 56px;
-  }
-
-  .site-header__logo {
-    font-size: var(--text-xl);
-    font-weight: 700;
-    color: var(--color-text);
-    letter-spacing: 0.05em;
+    gap: 10px;
     text-decoration: none;
   }
 
-  .site-header__logo:hover {
-    color: var(--color-accent);
-    text-decoration: none;
+  .logo-dot {
+    width: 8px; height: 8px;
+    background: var(--accent2);
+    border-radius: 50%;
+    flex-shrink: 0;
   }
 
-  .site-header__nav {
+  nav {
     display: flex;
-    gap: var(--space-6);
+    align-items: center;
+    gap: 32px;
   }
 
-  .nav-link {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
+  nav a {
+    font-size: 14px;
+    color: var(--ink2);
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    transition: color var(--transition);
     text-decoration: none;
-    padding: var(--space-1) 0;
-    border-bottom: 2px solid transparent;
-    transition: color var(--transition), border-color var(--transition);
   }
 
-  .nav-link:hover {
-    color: var(--color-text);
-    text-decoration: none;
-    border-bottom-color: var(--color-accent);
+  nav a:hover, nav a.active { color: var(--ink); }
+
+  .search-wrap {
+    display: flex;
+    align-items: center;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 20px;
+    padding: 6px 14px;
+    gap: 8px;
   }
 
-  .nav-link--active {
-    color: var(--color-text);
-    border-bottom-color: var(--color-accent);
+  .search-wrap input {
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    font-family: var(--font-sans);
+    color: var(--ink);
+    outline: none;
+    width: 140px;
+  }
+
+  .search-wrap input::placeholder { color: var(--ink3); }
+  .search-wrap svg { color: var(--ink3); flex-shrink: 0; }
+
+  @media (max-width: 768px) {
+    .site-header { padding: 0 16px; }
+    nav { display: none; }
+    .search-wrap { display: none; }
   }
 </style>

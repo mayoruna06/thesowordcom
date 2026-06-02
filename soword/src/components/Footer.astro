@@ -4,41 +4,30 @@ const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
-  <div class="container site-footer__inner">
-    <p class="site-footer__copy">© {year} 勒索沃德 · 小書樓</p>
-    <nav class="site-footer__links" aria-label="頁尾連結">
-      <a href={`${base}rss.xml`}>RSS 訂閱</a>
+  <div class="container footer-inner">
+    <span class="footer-copy">© {year} 勒索沃德 · 小書樓</span>
+    <nav class="footer-links">
+      <a href={`${base}rss.xml`}>RSS</a>
+      <a href="https://github.com/mayoruna06" target="_blank" rel="noopener">GitHub</a>
     </nav>
   </div>
 </footer>
 
 <style>
   .site-footer {
-    border-top: 1px solid var(--color-border);
-    padding: var(--space-6) 0;
-    margin-top: var(--space-12);
+    border-top: 1px solid var(--line);
+    padding: 24px 0;
+    margin-top: 0;
   }
-
-  .site-footer__inner {
+  .footer-inner {
     display: flex;
     align-items: center;
     justify-content: space-between;
     flex-wrap: wrap;
-    gap: var(--space-4);
+    gap: 12px;
   }
-
-  .site-footer__copy {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-  }
-
-  .site-footer__links {
-    display: flex;
-    gap: var(--space-4);
-  }
-
-  .site-footer__links a {
-    font-size: var(--text-sm);
-    color: var(--color-text-muted);
-  }
+  .footer-copy { font-size: 12px; color: var(--ink3); letter-spacing: 0.06em; }
+  .footer-links { display: flex; gap: 20px; }
+  .footer-links a { font-size: 12px; color: var(--ink3); letter-spacing: 0.06em; transition: color var(--transition); }
+  .footer-links a:hover { color: var(--ink2); }
 </style>

@@ -1,50 +1,26 @@
 ---
 import WorkLayout from '@layouts/WorkLayout.astro';
-import TableOfContents from '@components/TableOfContents.astro';
-import { getCollection } from 'astro:content';
+import { getCollection, render } from 'astro:content';
 
 export async function getStaticPaths() {
   const works = await getCollection('works', ({ data }) => data.status !== 'draft');
-  const chapters = await getCollection('chapters');
+  const allChapters = await getCollection('chapters');
 
   return works.map(work => ({
     params: { work: work.slug },
     props: {
       work,
-      chapters: chapters.filter(ch => ch.data.work === work.slug),
+      chapters: allChapters
+        .filter(ch => ch.data.work === work.slug)
+        .sort((a, b) => a.data.chapter - b.data.chapter),
     },
   }));
 }
 
 const { work, chapters } = Astro.props;
+const { Content } = await render(work);
 ---
 
-<WorkLayout work={work}>
-  <div class="work-body">
-    <section class="work-desc">
-      <slot />
-    </section>
-
-    <TableOfContents workSlug={work.slug} chapters={chapters} />
-  </div>
+<WorkLayout work={work} chapters={chapters}>
+  <Content />
 </WorkLayout>
-
-<style>
-  .work-body {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-8);
-  }
-
-  .work-desc :global(h2) {
-    font-size: var(--text-lg);
-    font-weight: 700;
-    margin-bottom: var(--space-3);
-  }
-
-  .work-desc :global(p) {
-    color: var(--color-text-muted);
-    line-height: 1.8;
-    margin-bottom: var(--space-3);
-  }
-</style>

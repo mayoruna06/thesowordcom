@@ -1,12 +1,10 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import Breadcrumb from '@components/Breadcrumb.astro';
-import ChapterNav from '@components/ChapterNav.astro';
-import TableOfContents from '@components/TableOfContents.astro';
 import '../styles/typography.css';
 import type { CollectionEntry } from 'astro:content';
+
+const base = import.meta.env.BASE_URL;
 
 interface Props {
   work: CollectionEntry<'works'>;
@@ -17,44 +15,182 @@ interface Props {
 }
 
 const { work, chapter, chapters, prev, next } = Astro.props;
-const { title, wordCount, publishedAt, updatedAt } = chapter.data;
+const { title, publishedAt, updatedAt } = chapter.data;
 
-const dateStr = (d: Date) =>
-  d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+const sorted = [...chapters].sort((a, b) => a.data.chapter - b.data.chapter);
+const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
 ---
 
 <BaseLayout
   title={`${title} — ${work.data.title}`}
   description={`《${work.data.title}》${title}`}
 >
-  <Header slot="header" />
   <Footer slot="footer" />
 
-  <div class="container" style="padding-top: var(--space-6); padding-bottom: var(--space-4);">
-    <Breadcrumb items={[
-      { label: '作品', href: `${import.meta.env.BASE_URL}works/` },
-      { label: work.data.title, href: `${import.meta.env.BASE_URL}works/${work.slug}/` },
-      { label: title },
-    ]} />
+  <!-- Reading Bar -->
+  <div class="reading-bar">
+    <div class="reading-bar-nav">
+      <a class="back-btn" href={`${base}works/${work.slug}/`}>← 返回</a>
+      <span class="sep">|</span>
+      <div class="breadcrumb">
+        <span>{work.data.title}</span>
+        <span>›</span>
+        <span class="bc-current">{title}</span>
+      </div>
+    </div>
+    <div class="reading-controls">
+      <button class="ctrl-btn" id="font-sm" title="縮小字體">A−</button>
+      <button class="ctrl-btn" id="font-lg" title="放大字體">A+</button>
+    </div>
   </div>
 
-  <div class="chapter-reader">
-    <header class="chapter-reader__header">
-      <h1 class="chapter-reader__title">{title}</h1>
-      <div class="chapter-reader__meta">
-        {wordCount && <span class="word-count">{wordCount.toLocaleString()}</span>}
-        <span class="pub-date">{dateStr(updatedAt ?? publishedAt)}</span>
-      </div>
-    </header>
+  <!-- Reading Content -->
+  <div class="reading-content">
+    <div class="chapter-heading">
+      <small>《{work.data.title}》</small>
+      {title}
+    </div>
 
-    <div class="prose">
+    <div class="chapter-body">
       <slot />
     </div>
 
-    <ChapterNav workSlug={work.slug} prev={prev} next={next} />
-  </div>
-
-  <div class="container" style="padding-bottom: var(--space-12);">
-    <TableOfContents workSlug={work.slug} chapters={chapters} currentSlug={chapter.slug} />
+    <!-- Chapter Nav -->
+    <div class="chapter-nav-bar">
+      {prev
+        ? <a class="ch-nav-btn" href={`${base}works/${work.slug}/${prev.slug}/`}>← 上一章</a>
+        : <button class="ch-nav-btn" disabled>← 上一章</button>
+      }
+      <span class="chapter-pos">{pos} / {chapters.length}</span>
+      {next
+        ? <a class="ch-nav-btn" href={`${base}works/${work.slug}/${next.slug}/`}>下一章 →</a>
+        : <button class="ch-nav-btn" disabled>下一章 →</button>
+      }
+    </div>
   </div>
 </BaseLayout>
+
+<style>
+  /* ── Reading Bar ── */
+  .reading-bar {
+    background: var(--white);
+    border-bottom: 1px solid var(--line);
+    padding: 0 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 52px;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .reading-bar-nav {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  .back-btn {
+    font-size: 13px;
+    color: var(--ink3);
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    white-space: nowrap;
+    transition: color var(--transition);
+    flex-shrink: 0;
+  }
+  .back-btn:hover { color: var(--ink); text-decoration: none; }
+
+  .sep { color: var(--line); flex-shrink: 0; }
+
+  .breadcrumb {
+    font-size: 13px;
+    color: var(--ink3);
+    letter-spacing: 0.06em;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+  }
+  .bc-current {
+    color: var(--ink2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .reading-controls { display: flex; gap: 8px; align-items: center; flex-shrink: 0; }
+
+  .ctrl-btn {
+    font-size: 12px;
+    color: var(--ink3);
+    cursor: pointer;
+    padding: 5px 10px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: transparent;
+    letter-spacing: 0.06em;
+    transition: border-color var(--transition), color var(--transition);
+  }
+  .ctrl-btn:hover { border-color: var(--accent); color: var(--ink); }
+
+  /* ── Chapter Nav ── */
+  .chapter-nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 60px;
+    padding-top: 32px;
+    border-top: 1px solid var(--line);
+  }
+
+  .ch-nav-btn {
+    font-size: 13px;
+    color: var(--ink2);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 16px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    background: var(--white);
+    letter-spacing: 0.08em;
+    transition: border-color var(--transition), background var(--transition);
+    text-decoration: none;
+    font-family: var(--font-sans);
+  }
+  .ch-nav-btn:hover { border-color: var(--accent); background: var(--warm); text-decoration: none; color: var(--ink); }
+  .ch-nav-btn:disabled { opacity: 0.4; cursor: default; pointer-events: none; }
+
+  .chapter-pos { font-size: 12px; color: var(--ink3); letter-spacing: 0.06em; }
+
+  @media (max-width: 768px) {
+    .reading-bar { padding: 0 16px; }
+    .breadcrumb { display: none; }
+    .sep { display: none; }
+  }
+</style>
+
+<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug }}>
+  // 記憶閱讀進度
+  localStorage.setItem(`last-chapter-${workSlug}`, chapterSlug);
+
+  // 字體大小控制
+  let size = 0;
+  document.getElementById('font-sm')?.addEventListener('click', () => {
+    size = Math.max(size - 1, -1);
+    document.body.className = document.body.className
+      .replace(/font-size-\w+/g, '').trim();
+    if (size !== 0) document.body.classList.add(size < 0 ? 'font-size-sm' : 'font-size-lg');
+  });
+  document.getElementById('font-lg')?.addEventListener('click', () => {
+    size = Math.min(size + 1, 1);
+    document.body.className = document.body.className
+      .replace(/font-size-\w+/g, '').trim();
+    if (size !== 0) document.body.classList.add(size < 0 ? 'font-size-sm' : 'font-size-lg');
+  });
+</script>
