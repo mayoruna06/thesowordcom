@@ -797,11 +797,6 @@ function addSkill() {
   el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>新技能`;
   document.getElementById('skills-list').appendChild(el); enableSortable(el); el.focus();
 }
-function addTool() {
-  const el = document.createElement('span'); el.className = 'tag deletable'; el.draggable = true; el.contentEditable = 'true';
-  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>新工具`;
-  document.getElementById('tools-list').appendChild(el); enableSortable(el); el.focus();
-}
 function addLanguage() {
   const el = document.createElement('div'); el.className = 'lang-item deletable'; el.draggable = true;
   el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="lang-name" contenteditable="true">語言</span><span class="lang-level" contenteditable="true">程度</span>`;
@@ -1335,7 +1330,7 @@ function addImgToPage(input, pageNum) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = ev => {
-    const area = document.getElementById('extra-img-area-' + pageNum);
+    const area = document.getElementById('extra-main-' + pageNum);
     if (!area) return;
 
     const container = document.createElement('div');
@@ -1365,12 +1360,6 @@ function addImgToPage(input, pageNum) {
   input.value = '';
 }
 
-function addExperienceToPage(pageNum) {
-  const el = document.createElement('div'); el.className = 'experience-item deletable'; el.draggable = true;
-  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="exp-header"><div class="exp-title" contenteditable="true">職位名稱</div><div class="exp-date" contenteditable="true">年份 — 年份</div></div><div class="exp-desc" contenteditable="true">公司名稱｜工作內容描述...</div>`;
-  const list = document.getElementById('extra-exp-list-' + pageNum);
-  if (list) { list.appendChild(el); enableSortable(el); el.querySelector('.exp-title').focus(); }
-}
 
 /* 面板展開/收合 */
 function togglePanel() {
@@ -1498,6 +1487,8 @@ observer.observe(document.body, { childList: true, subtree: true, attributes: tr
     if (section && !section.querySelector('.img-container, [contenteditable]')) section.remove();
     deselect();
   };
+
+  window.selectImg = selectImg;
 
   window.initImgWrap = function(wrap) {
     const img = wrap.querySelector('img');
