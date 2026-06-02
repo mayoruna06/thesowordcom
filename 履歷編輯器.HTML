@@ -1127,7 +1127,7 @@ async function exportPDF() {
     --ink-mid:${t.inkMid};--ink-light:${t.inkLight};--border:${t.border};
   }`;
 
-  const pages = document.querySelectorAll('.resume-page');
+  const pages = Array.from(document.querySelectorAll('.resume-page')).filter(p => p.style.display !== 'none');
   let pagesHTML = '';
   pages.forEach((page, i) => {
     const clone = page.cloneNode(true);
