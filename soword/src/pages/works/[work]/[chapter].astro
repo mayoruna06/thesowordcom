@@ -1,0 +1,39 @@
+---
+import ChapterLayout from '@layouts/ChapterLayout.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const works = await getCollection('works', ({ data }) => data.status !== 'draft');
+  const allChapters = await getCollection('chapters');
+
+  const workSlugs = new Set(works.map(w => w.slug));
+
+  return allChapters
+    .filter(ch => workSlugs.has(ch.data.work))
+    .map(ch => {
+      const workChapters = allChapters
+        .filter(c => c.data.work === ch.data.work)
+        .sort((a, b) => a.data.chapter - b.data.chapter);
+
+      const idx = workChapters.findIndex(c => c.slug === ch.slug);
+
+      return {
+        params: { work: ch.data.work, chapter: ch.slug },
+        props: {
+          work: works.find(w => w.slug === ch.data.work)!,
+          chapter: ch,
+          chapters: workChapters,
+          prev: workChapters[idx - 1],
+          next: workChapters[idx + 1],
+        },
+      };
+    });
+}
+
+const { work, chapter, chapters, prev, next } = Astro.props;
+const { Content } = await render(chapter);
+---
+
+<ChapterLayout work={work} chapter={chapter} chapters={chapters} prev={prev} next={next}>
+  <Content />
+</ChapterLayout>

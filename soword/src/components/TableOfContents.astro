@@ -1,0 +1,106 @@
+---
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  workSlug: string;
+  chapters: CollectionEntry<'chapters'>[];
+  currentSlug?: string;
+}
+
+const { workSlug, chapters, currentSlug } = Astro.props;
+
+const sorted = [...chapters].sort((a, b) => a.data.chapter - b.data.chapter);
+---
+
+<section class="toc">
+  <h2 class="toc__title">章節目錄 <span class="toc__count">（共 {chapters.length} 章）</span></h2>
+  {sorted.length === 0
+    ? <p class="toc__empty">尚無章節</p>
+    : (
+      <ol class="toc__list">
+        {sorted.map(ch => (
+          <li class:list={['toc__item', { 'toc__item--active': ch.slug === currentSlug }]}>
+            <a href={`/works/${workSlug}/${ch.slug}/`} class="toc__link">
+              <span class="toc__chapter-title">{ch.data.title}</span>
+              {ch.data.wordCount && (
+                <span class="toc__word-count">{ch.data.wordCount.toLocaleString()} 字</span>
+              )}
+            </a>
+          </li>
+        ))}
+      </ol>
+    )
+  }
+</section>
+
+<style>
+  .toc {
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    padding: var(--space-4) var(--space-6);
+    background: var(--color-bg-card);
+  }
+
+  .toc__title {
+    font-size: var(--text-lg);
+    font-weight: 700;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-3);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .toc__count {
+    font-size: var(--text-sm);
+    font-weight: 400;
+    color: var(--color-text-muted);
+  }
+
+  .toc__list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .toc__item { border-radius: var(--radius-sm); }
+
+  .toc__item--active { background: var(--color-surface); }
+
+  .toc__link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-4);
+    padding: var(--space-2) var(--space-3);
+    text-decoration: none;
+    color: var(--color-text);
+    font-size: var(--text-sm);
+    border-radius: var(--radius-sm);
+    transition: background var(--transition);
+  }
+
+  .toc__link:hover {
+    background: var(--color-surface);
+    text-decoration: none;
+  }
+
+  .toc__item--active .toc__link {
+    color: var(--color-accent);
+    font-weight: 600;
+  }
+
+  .toc__chapter-title { flex: 1; }
+
+  .toc__word-count {
+    font-size: var(--text-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+  }
+
+  .toc__empty {
+    color: var(--color-text-muted);
+    font-size: var(--text-sm);
+    padding: var(--space-4) 0;
+    text-align: center;
+  }
+</style>

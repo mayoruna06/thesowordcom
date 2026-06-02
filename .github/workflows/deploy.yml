@@ -1,0 +1,167 @@
+name: Deploy 小書樓
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'soword/**'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+    inputs:
+      invalidate_all:
+        description: '是否清除 CloudFront 全站快取'
+        required: false
+        default: 'false'
+        type: boolean
+
+concurrency:
+  group: deploy-soword-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Astro Site
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+
+    outputs:
+      artifact-name: soword-dist-${{ github.sha }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: soword/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: soword
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        working-directory: soword
+        run: pnpm run check
+
+      - name: Build site
+        working-directory: soword
+        run: pnpm run build
+        env:
+          SITE: 'https://thesoword.com'
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: soword-dist-${{ github.sha }}
+          path: dist/soword/
+          retention-days: 7
+          if-no-files-found: error
+
+  deploy:
+    name: Deploy to S3 + CloudFront
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+
+    environment:
+      name: production
+      url: https://thesoword.com
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.artifact-name }}
+          path: dist/
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id:     ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region:            ${{ secrets.AWS_REGION }}
+
+      - name: Sync HTML files (no-cache)
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --exclude "*" \
+            --include "*.html" \
+            --cache-control "public, max-age=0, must-revalidate" \
+            --content-type "text/html; charset=utf-8" \
+            --delete
+
+      - name: Sync CSS and JS (long cache)
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --exclude "*" \
+            --include "*.css" \
+            --include "*.js" \
+            --include "*.mjs" \
+            --cache-control "public, max-age=31536000, immutable"
+
+      - name: Sync images and fonts
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --exclude "*" \
+            --include "*.jpg" \
+            --include "*.jpeg" \
+            --include "*.png" \
+            --include "*.webp" \
+            --include "*.avif" \
+            --include "*.svg" \
+            --include "*.ico" \
+            --include "*.woff" \
+            --include "*.woff2" \
+            --cache-control "public, max-age=86400"
+
+      - name: Sync remaining files
+        run: |
+          aws s3 sync dist/ s3://${{ secrets.S3_BUCKET_NAME }}/ \
+            --exclude "*.html" \
+            --exclude "*.css" \
+            --exclude "*.js" \
+            --exclude "*.mjs" \
+            --exclude "*.jpg" \
+            --exclude "*.jpeg" \
+            --exclude "*.png" \
+            --exclude "*.webp" \
+            --exclude "*.avif" \
+            --exclude "*.svg" \
+            --exclude "*.ico" \
+            --exclude "*.woff" \
+            --exclude "*.woff2" \
+            --cache-control "public, max-age=3600"
+
+      - name: Invalidate CloudFront HTML cache
+        run: |
+          PATHS="/*.html /works/* /"
+          if [ "${{ github.event.inputs.invalidate_all }}" = "true" ]; then
+            PATHS="/*"
+          fi
+          aws cloudfront create-invalidation \
+            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
+            --paths $PATHS
+
+      - name: Deployment summary
+        run: |
+          echo "## 部署完成" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **觸發者:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **時間:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+          echo "- **網址:** [https://thesoword.com](https://thesoword.com)" >> $GITHUB_STEP_SUMMARY

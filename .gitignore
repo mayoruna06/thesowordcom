@@ -1,0 +1,8 @@
+dist/
+soword/node_modules/
+soword/.astro/
+soword/.env
+soword/.env.local
+soword/.env.*.local
+.DS_Store
+Thumbs.db

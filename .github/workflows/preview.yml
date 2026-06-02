@@ -1,0 +1,29 @@
+name: PR Preview Check
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'soword/**'
+
+jobs:
+  build-check:
+    name: Build Check (PR)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+          cache-dependency-path: soword/pnpm-lock.yaml
+      - run: pnpm install --frozen-lockfile
+        working-directory: soword
+      - run: pnpm run check
+        working-directory: soword
+      - run: pnpm run build
+        working-directory: soword

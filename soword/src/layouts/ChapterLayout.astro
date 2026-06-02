@@ -1,0 +1,60 @@
+---
+import BaseLayout from './BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import Breadcrumb from '@components/Breadcrumb.astro';
+import ChapterNav from '@components/ChapterNav.astro';
+import TableOfContents from '@components/TableOfContents.astro';
+import '../styles/typography.css';
+import type { CollectionEntry } from 'astro:content';
+
+interface Props {
+  work: CollectionEntry<'works'>;
+  chapter: CollectionEntry<'chapters'>;
+  chapters: CollectionEntry<'chapters'>[];
+  prev?: CollectionEntry<'chapters'>;
+  next?: CollectionEntry<'chapters'>;
+}
+
+const { work, chapter, chapters, prev, next } = Astro.props;
+const { title, wordCount, publishedAt, updatedAt } = chapter.data;
+
+const dateStr = (d: Date) =>
+  d.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
+---
+
+<BaseLayout
+  title={`${title} — ${work.data.title}`}
+  description={`《${work.data.title}》${title}`}
+>
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <div class="container" style="padding-top: var(--space-6); padding-bottom: var(--space-4);">
+    <Breadcrumb items={[
+      { label: '作品', href: '/works/' },
+      { label: work.data.title, href: `/works/${work.slug}/` },
+      { label: title },
+    ]} />
+  </div>
+
+  <div class="chapter-reader">
+    <header class="chapter-reader__header">
+      <h1 class="chapter-reader__title">{title}</h1>
+      <div class="chapter-reader__meta">
+        {wordCount && <span class="word-count">{wordCount.toLocaleString()}</span>}
+        <span class="pub-date">{dateStr(updatedAt ?? publishedAt)}</span>
+      </div>
+    </header>
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    <ChapterNav workSlug={work.slug} prev={prev} next={next} />
+  </div>
+
+  <div class="container" style="padding-bottom: var(--space-12);">
+    <TableOfContents workSlug={work.slug} chapters={chapters} currentSlug={chapter.slug} />
+  </div>
+</BaseLayout>

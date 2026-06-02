@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jasper no heya</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:    #f0e8d8;
+    --bg2:   #e8dece;
+    --bg3:   #dfd4c2;
+    --line:  #d0c5b0;
+    --text:  #1a1714;
+    --text2: #5a5550;
+    --text3: #9a948e;
+    --amber:       #7a6a52;
+    --amber-dark:  #7a6a52;
+    --green:       #1a7a52;
+    --green-bright:#1a7a52;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Noto Sans TC', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 0 36px;
+  }
+
+  /* ── HERO ── */
+  .hero {
+    padding: 120px 0 88px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .hero-label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .hero-name {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 56px;
+    font-weight: 300;
+    letter-spacing: 0.1em;
+    line-height: 1.1;
+    margin-bottom: 22px;
+  }
+
+  .hero-bio {
+    font-size: 15px;
+    color: var(--text2);
+    line-height: 1.9;
+    max-width: 480px;
+    margin-bottom: 44px;
+  }
+
+  .btn-pdf {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 26px;
+    border: 1px solid var(--line);
+    background: var(--bg2);
+    color: var(--text2);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    transition: border-color 0.2s, color 0.2s, background 0.2s;
+  }
+  .btn-pdf:hover {
+    border-color: var(--text3);
+    color: var(--text);
+    background: var(--bg3);
+  }
+  .btn-pdf svg { opacity: 0.45; }
+
+  /* ── WORKS ── */
+  .works {
+    padding: 80px 0 100px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 36px;
+  }
+
+  .cards {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+
+  .card {
+    position: relative;
+    display: block;
+    padding: 44px 38px;
+    background: var(--bg);
+    text-decoration: none;
+    color: inherit;
+    overflow: hidden;
+    transition: background 0.2s;
+  }
+  .card:hover { background: var(--bg2); }
+
+  /* accent bar on hover */
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    opacity: 0;
+    transition: opacity 0.25s;
+  }
+  .card--novel::before  { background: var(--amber-dark); }
+  .card--resume::before { background: var(--green); }
+  .card:hover::before   { opacity: 1; }
+
+  .card-tag {
+    font-size: 10px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin-bottom: 18px;
+  }
+  .card--novel  .card-tag { color: var(--amber); }
+  .card--resume .card-tag { color: var(--green-bright); }
+
+  .card-title {
+    font-family: 'Noto Serif TC', serif;
+    font-size: 30px;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+
+  .card-desc {
+    font-size: 13px;
+    color: var(--text2);
+    line-height: 1.85;
+    margin-bottom: 36px;
+  }
+
+  .card-arrow {
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    color: var(--text3);
+    transition: color 0.2s, letter-spacing 0.2s;
+  }
+  .card:hover .card-arrow {
+    color: var(--text2);
+    letter-spacing: 0.18em;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    border-top: 1px solid var(--line);
+    padding: 28px 0;
+  }
+  .footer-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .footer-name {
+    font-size: 13px;
+    color: var(--text3);
+    letter-spacing: 0.08em;
+  }
+  .footer-links {
+    display: flex;
+    gap: 24px;
+  }
+  .footer-links a {
+    font-size: 12px;
+    color: var(--text3);
+    text-decoration: none;
+    letter-spacing: 0.06em;
+    transition: color 0.2s;
+  }
+  .footer-links a:hover { color: var(--text2); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 640px) {
+    .hero { padding: 72px 0 60px; }
+    .hero-name { font-size: 38px; }
+    .cards { grid-template-columns: 1fr; }
+    .container { padding: 0 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="hero-label">Personal · 個人</p>
+    <h1 class="hero-name">勒索沃德</h1>
+    <p class="hero-bio">[嘗試把文字與程式融合。]</p>
+    <a href="./resume.pdf" target="_blank" class="btn-pdf">
+      <svg width="14" height="16" viewBox="0 0 14 16" fill="none">
+        <path d="M2 1h7l3 3v11H2V1z" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M9 1v3h3" stroke="currentColor" stroke-width="1.2"/>
+        <path d="M4 8h6M4 11h4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+      </svg>
+      下載履歷 PDF
+    </a>
+  </section>
+
+  <!-- WORKS -->
+  <section class="works">
+    <p class="section-label">Works · 作品</p>
+    <div class="cards">
+
+      <a href="./novel_site.html" class="card card--novel">
+        <p class="card-tag">Fiction · 小說</p>
+        <h2 class="card-title">小書樓</h2>
+        <p class="card-desc">收錄原創小說與短篇故事，在文字裡搭建另一個世界。</p>
+        <p class="card-arrow">前往 →</p>
+      </a>
+
+      <a href="./履歷編輯器.HTML" class="card card--resume">
+        <p class="card-tag">Tool · 工具</p>
+        <h2 class="card-title">履歷編輯器</h2>
+        <p class="card-desc">水墨竹風線上履歷編輯器，直接在瀏覽器內排版並匯出。</p>
+        <p class="card-arrow">前往 →</p>
+      </a>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="container">
+    <div class="footer-inner">
+      <span class="footer-name">[你的名字]</span>
+      <div class="footer-links">
+        <a href="mailto:[你的Email]">Email</a>
+        <a href="https://github.com/[你的GitHub]" target="_blank">GitHub</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

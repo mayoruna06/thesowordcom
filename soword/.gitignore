@@ -1,0 +1,10 @@
+dist/
+.astro/
+.env
+.env.local
+.env.*.local
+node_modules/
+.vscode/settings.json
+.idea/
+.DS_Store
+Thumbs.db

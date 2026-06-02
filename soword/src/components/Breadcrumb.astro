@@ -1,0 +1,47 @@
+---
+interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  items: BreadcrumbItem[];
+}
+
+const { items } = Astro.props;
+---
+
+<nav class="breadcrumb" aria-label="麵包屑導覽">
+  <ol>
+    <li><a href="/">首頁</a></li>
+    {items.map((item, i) => (
+      <li>
+        {item.href && i < items.length - 1
+          ? <a href={item.href}>{item.label}</a>
+          : <span aria-current="page">{item.label}</span>
+        }
+      </li>
+    ))}
+  </ol>
+</nav>
+
+<style>
+  .breadcrumb ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    list-style: none;
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    align-items: center;
+  }
+
+  .breadcrumb li + li::before {
+    content: '›';
+    margin-right: var(--space-2);
+  }
+
+  .breadcrumb a { color: var(--color-text-muted); }
+  .breadcrumb a:hover { color: var(--color-link); }
+  .breadcrumb [aria-current="page"] { color: var(--color-text); }
+</style>

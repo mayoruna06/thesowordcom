@@ -1,0 +1,62 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+---
+
+<BaseLayout title="找不到頁面">
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <div class="container">
+    <div class="not-found">
+      <p class="not-found__code">404</p>
+      <h1 class="not-found__title">找不到這個頁面</h1>
+      <p class="not-found__desc">你要找的頁面可能已移動、刪除，或網址打錯了。</p>
+      <a href="/" class="not-found__btn">回到首頁</a>
+    </div>
+  </div>
+</BaseLayout>
+
+<style>
+  .not-found {
+    text-align: center;
+    padding: var(--space-24) var(--space-4);
+  }
+
+  .not-found__code {
+    font-size: 6rem;
+    font-weight: 900;
+    color: var(--color-border);
+    line-height: 1;
+    margin-bottom: var(--space-4);
+  }
+
+  .not-found__title {
+    font-size: var(--text-2xl);
+    font-weight: 700;
+    margin-bottom: var(--space-3);
+  }
+
+  .not-found__desc {
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-8);
+  }
+
+  .not-found__btn {
+    display: inline-block;
+    padding: var(--space-3) var(--space-6);
+    background: var(--color-accent);
+    color: #fff;
+    border-radius: var(--radius-md);
+    text-decoration: none;
+    font-weight: 600;
+    transition: background var(--transition);
+  }
+
+  .not-found__btn:hover {
+    background: var(--color-accent-hover);
+    text-decoration: none;
+    color: #fff;
+  }
+</style>

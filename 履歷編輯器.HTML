@@ -1,0 +1,1805 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>履歷編輯器 — 水墨竹風</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f0f4f2; font-family: 'Noto Sans TC', sans-serif; min-height: 100vh; display: flex; flex-direction: column; }
+
+/* 浮動工具面板 */
+#float-panel {
+  position: fixed; right: 18px; top: 50%; transform: translateY(-50%);
+  z-index: 1100; display: flex; flex-direction: column; align-items: flex-end; gap: 4px;
+}
+#fp-toggle {
+  width: 40px; height: 40px; border-radius: 50%;
+  background: #1a7a52; color: #33FFAA;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 16px; cursor: pointer; box-shadow: 0 3px 14px rgba(0,0,0,0.3);
+  transition: background 0.2s; user-select: none;
+}
+#fp-toggle:hover { background: #145f40; }
+#fp-body {
+  background: #1c2030; border: 1px solid rgba(51,255,170,0.25); border-radius: 14px;
+  padding: 14px 12px; display: flex; flex-direction: column; gap: 7px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35); min-width: 120px;
+  transition: opacity 0.2s, transform 0.2s;
+}
+#fp-body.collapsed { opacity: 0; pointer-events: none; transform: translateX(20px); }
+.fp-label { font-size: 10px; color: #6b7080; letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+.fp-sep { height: 1px; background: rgba(255,255,255,0.07); margin: 2px 0; }
+.fp-btn {
+  background: rgba(255,255,255,0.07); border: 1px solid rgba(255,255,255,0.12);
+  color: #c8ccd8; border-radius: 7px; padding: 5px 10px; font-size: 11px;
+  cursor: pointer; transition: all 0.15s; letter-spacing: 0.3px;
+  font-family: 'Noto Sans TC', sans-serif; text-align: left;
+}
+.fp-btn:hover { background: rgba(51,255,170,0.15); border-color: #33FFAA; color: #33FFAA; }
+.fp-btn.primary { background: rgba(51,255,170,0.12); color: #33FFAA; border-color: #33FFAA55; font-weight: 500; }
+.fp-btn.primary:hover { background: rgba(51,255,170,0.25); }
+.fp-btn.orange { background: rgba(255,153,51,0.12); color: #ff9933; border-color: #ff993355; font-weight: 500; }
+.fp-btn.orange:hover { background: rgba(255,153,51,0.25); }
+.theme-pills { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; }
+.theme-pill { width: 18px; height: 18px; border-radius: 50%; border: 2px solid transparent; cursor: pointer; transition: transform 0.15s, border-color 0.15s; }
+.theme-pill:hover { transform: scale(1.2); }
+.theme-pill.active { border-color: #fff; transform: scale(1.15); }
+
+#editor-wrap { display:flex; flex-direction:column; align-items:center; padding:28px 20px 60px; flex:1; gap: 20px; }
+
+:root {
+  --bamboo-dark: #1a7a52;
+  --bamboo-mid: #33FFAA;
+  --bamboo-light: #66ffcc;
+  --bamboo-pale: #99ffdd;
+  --bamboo-accent: #00cc88;
+  --bg: #ffffff;
+  --bg-side: #f7fffe;
+  --ink: #0d2e20;
+  --ink-mid: #1e4d38;
+  --ink-light: #3a7a5c;
+  --border: #ccfff0;
+}
+
+.resume-page {
+  background:var(--bg); font-family:'Noto Sans TC',sans-serif; color:var(--ink);
+  width:794px; min-width:794px; min-height:1122px; position:relative;
+  border:1px solid var(--border); box-shadow:0 8px 40px rgba(0,0,0,0.12);
+  display:flex; flex-direction:column;
+}
+.ink-deco { position:absolute; pointer-events:none; z-index:2; }
+
+[contenteditable="true"] { outline:none; border-radius:3px; transition:background 0.15s, box-shadow 0.15s; cursor:text; display:inline-block; min-width: 20px; }
+[contenteditable="true"]:hover { background:rgba(51,255,170,0.12) !important; box-shadow:0 0 0 2px rgba(51,255,170,0.4); }
+[contenteditable="true"]:focus { background:rgba(51,255,170,0.18) !important; box-shadow:0 0 0 2px #33FFAA; }
+
+.header-section { background:var(--bamboo-dark); color:#fff; padding:22px 48px 18px; position:relative; z-index:1; }
+.header-top { display:flex; align-items:flex-end; gap:28px; margin-bottom:16px; }
+
+/* 頭像框樣式更新 */
+.avatar-circle { 
+  width:105px; height:105px;
+  border-radius:50%; 
+  border:2.5px solid var(--bamboo-mid); 
+  background-color:rgba(51,255,170,0.15); 
+  background-size: cover;
+  background-position: center; 
+  display:flex; align-items:center; justify-content:center; 
+  font-family:'Noto Serif TC',serif; font-size:36px; font-weight:700; color:var(--bamboo-mid); 
+  flex-shrink:0; cursor: pointer; transition: all 0.2s; position: relative;
+}
+.avatar-circle:hover { box-shadow: 0 0 0 4px rgba(51,255,170,0.3); }
+.avatar-resize-handle {
+  position: absolute; right: 7px; bottom: 7px;
+  width: 13px; height: 13px;
+  background: var(--bamboo-mid); border: 2px solid #fff;
+  border-radius: 3px; cursor: se-resize; z-index: 10;
+  opacity: 0; transition: opacity 0.2s;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+}
+.avatar-circle:hover .avatar-resize-handle { opacity: 1; }
+#avatar-zoom-tip {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.55); color: #fff; font-size: 10px; letter-spacing: 0.5px;
+  padding: 2px 8px; border-radius: 10px; pointer-events: none; white-space: nowrap;
+  opacity: 0; transition: opacity 0.3s; font-style: normal; font-family: 'Noto Sans TC', sans-serif;
+}
+#avatar-zoom-tip.show { opacity: 1; }
+
+.name-block h1 { font-family:'Noto Serif TC',serif; font-size:32px; font-weight:700; letter-spacing:4px; color:#fff; line-height:1.2; }
+.name-block .title-tag { margin-top:6px; font-size:13px; font-weight:300; letter-spacing:3px; color:var(--bamboo-mid); }
+.contact-row { display:flex; gap:24px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid rgba(51,255,170,0.2); }
+.contact-item { font-size:12px; color:rgba(255,255,255,0.75); letter-spacing:1px; display:flex; align-items:center; gap:6px; position:relative; }
+.contact-dot { width:4px; height:4px; background:var(--bamboo-mid); border-radius:50%; flex-shrink:0; }
+
+.body-section { display:grid; grid-template-columns:220px 1fr; position:relative; z-index:1; flex:1; }
+.sidebar { background:var(--bg-side); padding:32px 24px; border-right:1px solid var(--border); }
+.main-content { padding:32px 36px; background:var(--bg); }
+.section-title { font-family:'Noto Serif TC',serif; font-size:11px; font-weight:500; letter-spacing:3px; color:var(--bamboo-dark); text-transform:uppercase; margin-bottom:14px; padding-bottom:8px; border-bottom:2px solid var(--bamboo-mid); display:flex; align-items:center; gap:8px; }
+.section-icon { width:3px; height:16px; background:var(--bamboo-accent); border-radius:2px; flex-shrink:0; }
+.sidebar-section { margin-bottom:28px; }
+
+
+.tag-list { display:flex; flex-wrap:wrap; gap:6px; }
+.tag { font-size:11px; padding:4px 10px; background:#e8fffb; color:var(--ink-mid); border-radius:20px; letter-spacing:0.5px; border:1px solid var(--bamboo-pale); position:relative; }
+
+.lang-item { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; position:relative; }
+.lang-name { color:var(--ink-mid); letter-spacing:1px; }
+.lang-level { font-size:11px; color:var(--bamboo-accent); letter-spacing:0.5px; }
+
+.main-section { margin-bottom:28px; }
+.experience-item { margin-bottom:20px; padding-left:16px; border-left:2px solid var(--bamboo-pale); position:relative; background:var(--bg); }
+.experience-item::before { content:''; position:absolute; left:-5px; top:4px; width:8px; height:8px; background:var(--bamboo-mid); border-radius:50%; border:2px solid var(--bg); }
+.exp-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:3px; }
+.exp-title { font-family:'Noto Serif TC',serif; font-size:14px; font-weight:500; color:var(--ink); letter-spacing:1px; }
+.exp-date { font-size:11px; color:var(--bamboo-accent); letter-spacing:1px; white-space:nowrap; margin-left:12px; margin-top:2px; }
+.exp-desc { font-size:12px; color:var(--ink-mid); line-height:1.8; letter-spacing:0.5px; }
+.edu-item { margin-bottom:16px; position:relative; background:var(--bg-side); }
+.edu-degree { font-family:'Noto Serif TC',serif; font-size:13px; font-weight:500; color:var(--ink); letter-spacing:1px; display:block; }
+.edu-school { font-size:12px; color:var(--ink-light); letter-spacing:1px; margin-top:2px; display:block; }
+.edu-year { font-size:11px; color:var(--bamboo-accent); letter-spacing:1px; margin-top:2px; display:block; }
+.summary-text { font-size:12px; color:var(--ink-mid); line-height:1.8; letter-spacing:0.5px; border-left:3px solid var(--bamboo-mid); padding-left:14px; font-family:'Noto Sans TC',sans-serif; }
+.footer-strip { background:var(--bamboo-dark); height:8px; position:relative; z-index:1; }
+.footer-inner { height:100%; background:repeating-linear-gradient(90deg,transparent,transparent 40px,rgba(51,255,170,0.15) 40px,rgba(51,255,170,0.15) 42px); }
+
+/* 拖曳與刪除按鈕樣式 */
+.deletable { transition: transform 0.2s, box-shadow 0.2s; border-radius: 4px; }
+.deletable:hover { box-shadow: 0 0 0 1px rgba(51,255,170,0.2); cursor: grab; }
+.deletable:active { cursor: grabbing; }
+.del-btn { display:none; position:absolute; right:-8px; top:-4px; background:#ff4444; color:#fff; border:none; border-radius:50%; width:18px; height:18px; font-size:12px; cursor:pointer; line-height:17px; text-align:center; z-index:20; }
+.deletable:hover > .del-btn { display:block; }
+.drag-over { border-top: 2px dashed var(--bamboo-accent) !important; opacity: 0.7; }
+
+.add-btn { display:flex; align-items:center; gap:5px; font-size:11px; color:var(--bamboo-accent); cursor:pointer; padding:4px 0; opacity:0.55; transition:opacity 0.15s; background:none; border:none; letter-spacing:0.5px; margin-top:8px; font-family:'Noto Sans TC',sans-serif; }
+.add-btn:hover { opacity:1; }
+.add-btn::before { content:'+'; font-size:14px; font-weight:700; }
+
+#save-toast { position:fixed; bottom:24px; right:24px; background:#1a7a52; color:#fff; padding:10px 20px; border-radius:8px; font-size:13px; letter-spacing:1px; box-shadow:0 4px 20px rgba(0,0,0,0.2); opacity:0; transform:translateY(10px); transition:all 0.3s; pointer-events:none; z-index:9999; }
+#save-toast.show { opacity:1; transform:translateY(0); }
+
+/* 浮動格式列 */
+#format-bar { position: fixed; z-index: 9000; background: #1c2030; border: 1px solid #33FFAA44; border-radius: 10px; padding: 6px 10px; display: none; align-items: center; gap: 6px; box-shadow: 0 6px 24px rgba(0,0,0,0.4); pointer-events: auto; user-select: none; }
+#format-bar.visible { display: flex; }
+.fmt-label { font-size: 10px; color: #6b7080; letter-spacing: 1px; }
+.fmt-sep { width:1px; height:20px; background:#2e3240; }
+.fmt-btn { background: none; border: 1px solid #2e3240; border-radius: 5px; color: #c8ccd8; font-size: 11px; padding: 3px 8px; cursor: pointer; transition: all 0.15s; font-family: 'Noto Sans TC', sans-serif; white-space: nowrap; }
+.fmt-btn:hover { border-color: #33FFAA; color: #33FFAA; }
+.fmt-size-display { font-size: 12px; color: #33FFAA; min-width: 28px; text-align: center; font-variant-numeric: tabular-nums; }
+.fmt-color-wrap { position: relative; width: 22px; height: 22px; border-radius: 50%; overflow: hidden; border: 2px solid #2e3240; cursor: pointer; flex-shrink: 0; }
+.fmt-color-wrap:hover { border-color: #33FFAA; }
+.fmt-color-wrap input[type="color"] { position: absolute; width: 200%; height: 200%; top: -50%; left: -50%; cursor: pointer; border: none; background: none; opacity: 0; }
+.fmt-color-swatch { position: absolute; inset: 0; border-radius: 50%; background: #e06060; pointer-events: none; }
+
+.page-label {
+  position: absolute; top: 10px; right: 14px; font-size: 10px;
+  color: rgba(255,255,255,0.35); letter-spacing: 1px; pointer-events: none; z-index: 5;
+}
+.page-del-btn {
+  position: absolute; top: 8px; left: 14px; z-index: 10;
+  background: rgba(255,60,60,0.15); border: 1px solid rgba(255,80,80,0.35);
+  color: rgba(255,120,120,0.85); font-size: 11px; letter-spacing: 0.5px;
+  padding: 3px 10px; border-radius: 6px; cursor: pointer;
+  font-family: 'Noto Sans TC', sans-serif; transition: all 0.15s;
+}
+.page-del-btn:hover { background: rgba(255,60,60,0.35); border-color: #ff4444; color: #fff; }
+
+/* 圖片插入與調整大小 */
+.img-container { margin: 8px 0; line-height: 0; }
+.img-wrap { position: relative; display: inline-block; cursor: pointer; }
+.img-wrap img { display: block; max-width: 100%; border-radius: 4px; }
+.img-wrap.img-selected img { outline: 2px solid var(--bamboo-mid); outline-offset: 2px; }
+.img-resize-handle {
+  position: absolute; right: -6px; bottom: -6px;
+  width: 14px; height: 14px;
+  background: var(--bamboo-mid); border: 2px solid #fff; border-radius: 3px;
+  cursor: se-resize; display: none; z-index: 20;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.35);
+}
+.img-wrap.img-selected .img-resize-handle { display: block; }
+#img-bar {
+  position: fixed; z-index: 9100; background: #1c2030;
+  border: 1px solid #33FFAA44; border-radius: 10px;
+  padding: 6px 10px; display: none; align-items: center; gap: 6px;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.4); user-select: none;
+}
+
+/* ── 模板縮圖 ── */
+.tpl-row { display: flex; gap: 7px; }
+.tpl-thumb {
+  width: 48px; height: 32px; border-radius: 5px; overflow: hidden;
+  cursor: pointer; border: 2px solid transparent; transition: border-color 0.15s; flex-shrink: 0;
+}
+.tpl-thumb:hover { border-color: #555; }
+.tpl-thumb.active { border-color: #33FFAA; }
+
+/* ── 米紙暖調模板 ── */
+.tpl-warm { background: #faf7f2 !important; border: 1px solid #d8cdb8 !important; }
+.w-body { display: grid; grid-template-columns: 230px 1fr; min-height: 1122px; }
+.w-sidebar { background: #f0e8d8; padding: 36px 24px; border-right: 1px solid #d8cdb8; }
+.w-main { background: #faf7f2; padding: 36px 40px; }
+.w-hero { text-align: center; padding-bottom: 24px; margin-bottom: 22px; border-bottom: 1px solid #d8cdb8; }
+.w-avatar {
+  width: 80px; height: 80px; border-radius: 50%; border: 2.5px solid #c4a882;
+  background: rgba(196,168,130,0.18); background-size: cover; background-position: center;
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Noto Serif TC', serif; font-size: 26px; font-weight: 700; color: #7a6a52;
+  margin: 0 auto 12px; cursor: pointer; transition: all 0.2s; position: relative;
+}
+.w-avatar:hover { box-shadow: 0 0 0 4px rgba(196,168,130,0.3); }
+.w-name { font-family: 'Noto Serif TC', serif; font-size: 20px; font-weight: 700; letter-spacing: 3px; color: #1a1714; margin-bottom: 5px; line-height: 1.2; }
+.w-title-tag { font-size: 11px; letter-spacing: 2px; color: #7a6a52; }
+.w-section { margin-bottom: 20px; }
+.w-section-title {
+  font-family: 'Noto Serif TC', serif; font-size: 10px; letter-spacing: 2.5px;
+  color: #7a6a52; text-transform: uppercase; font-weight: 500;
+  margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid #c4a882;
+}
+.w-contact { display: flex; align-items: flex-start; gap: 7px; font-size: 11px; color: #5a5550; margin-bottom: 6px; line-height: 1.5; position: relative; }
+.w-contact-icon { color: #9a8870; font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+.w-tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.w-tag { font-size: 10px; padding: 3px 9px; background: #ede8df; color: #5a5550; border-radius: 20px; border: 1px solid #d8cdb8; letter-spacing: 0.3px; position: relative; }
+.w-lang { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; position: relative; }
+.w-lang-name { color: #3a3330; letter-spacing: 0.5px; }
+.w-lang-level { font-size: 10px; color: #9a8870; }
+.w-edu { margin-bottom: 12px; position: relative; }
+.w-edu-school { font-family: 'Noto Serif TC', serif; font-size: 12px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; display: block; }
+.w-edu-degree { font-size: 11px; color: #5a5550; margin-top: 2px; display: block; }
+.w-edu-year { font-size: 10px; color: #9a8870; margin-top: 2px; display: block; }
+.w-add-btn { color: #9a8870 !important; }
+.w-add-btn:hover { color: #7a6a52 !important; }
+.w-main-section { margin-bottom: 24px; }
+.w-main-title {
+  font-family: 'Noto Serif TC', serif; font-size: 10px; letter-spacing: 2.5px;
+  text-transform: uppercase; color: #7a6a52; font-weight: 500;
+  margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1.5px solid #c4a882;
+}
+.w-summary { font-size: 12px; color: #3a3330; line-height: 1.85; letter-spacing: 0.5px; border-left: 3px solid #c4a882; padding-left: 14px; }
+.w-exp { margin-bottom: 16px; padding-left: 14px; border-left: 2px solid #d8cdb8; position: relative; }
+.w-exp::before { content: ''; position: absolute; left: -5px; top: 5px; width: 8px; height: 8px; background: #c4a882; border-radius: 50%; border: 2px solid #faf7f2; }
+.w-exp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.w-exp-title { font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; }
+.w-exp-company { font-size: 11px; color: #7a6a52; margin-top: 2px; }
+.w-exp-date { font-size: 10px; color: #9a8870; white-space: nowrap; margin-left: 10px; margin-top: 3px; }
+.w-exp-desc { font-size: 11px; color: #5a5550; line-height: 1.8; letter-spacing: 0.3px; margin-top: 5px; }
+.w-proj { margin-bottom: 14px; position: relative; }
+.w-proj-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.w-proj-title { font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; }
+.w-proj-date { font-size: 10px; color: #c4a882; font-weight: 500; white-space: nowrap; margin-left: 10px; margin-top: 3px; }
+.w-proj-desc { font-size: 11px; color: #5a5550; line-height: 1.8; letter-spacing: 0.3px; }
+.w-cert { margin-bottom: 12px; position: relative; }
+.w-cert-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.w-cert-title { font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; }
+.w-cert-date { font-size: 10px; color: #c4a882; font-weight: 500; white-space: nowrap; margin-left: 10px; margin-top: 3px; }
+.w-cert-desc { font-size: 11px; color: #5a5550; line-height: 1.8; letter-spacing: 0.3px; }
+</style>
+</head>
+<body>
+
+<div id="float-panel">
+  <div id="fp-toggle" onclick="togglePanel()" title="工具面板">✦</div>
+  <div id="fp-body">
+    <div class="fp-label">模板</div>
+    <div class="tpl-row">
+      <div class="tpl-thumb active" data-tpl="bamboo" onclick="switchTemplate('bamboo')" title="水墨竹風">
+        <div style="height:10px;background:#1a7a52;"></div>
+        <div style="display:flex;height:20px;">
+          <div style="width:37%;background:#f7fffe;"></div>
+          <div style="flex:1;background:#fff;"></div>
+        </div>
+      </div>
+      <div class="tpl-thumb" data-tpl="warm" onclick="switchTemplate('warm')" title="米紙暖調">
+        <div style="display:flex;height:30px;">
+          <div style="width:37%;background:#f0e8d8;"></div>
+          <div style="flex:1;background:#faf7f2;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="fp-sep"></div>
+    <div class="fp-label">主題色</div>
+    <div class="theme-pills">
+      <div class="theme-pill active" style="background:#1a7a52" data-theme="green" title="竹林綠"></div>
+      <div class="theme-pill" style="background:#1a4a7a" data-theme="navy" title="深海藍"></div>
+      <div class="theme-pill" style="background:#7a1a4a" data-theme="plum" title="梅紫"></div>
+      <div class="theme-pill" style="background:#7a4a1a" data-theme="earth" title="赤土棕"></div>
+      <div class="theme-pill" style="background:#333333" data-theme="ink" title="純墨黑"></div>
+    </div>
+    <div class="fp-sep"></div>
+    <div class="fp-label">新增欄位</div>
+    <button class="fp-btn" onclick="addSkill()">＋ 技能</button>
+    <button class="fp-btn" onclick="addPortfolio()">＋ 作品</button>
+    <button class="fp-btn" onclick="addCert()">＋ 證照</button>
+    <button class="fp-btn" onclick="document.getElementById('img-upload').click()">＋ 圖片</button>
+    <div class="fp-sep"></div>
+    <div class="fp-label">頁面</div>
+    <button class="fp-btn" onclick="addPage()">＋ 新增頁面</button>
+    <div class="fp-sep"></div>
+    <button class="fp-btn" style="background:rgba(51,170,255,0.12);color:#55ccff;border-color:#33aaff55;" onclick="saveResume()">💾 儲存草稿</button>
+    <div class="fp-sep"></div>
+    <button class="fp-btn primary" onclick="exportHTML()">⬇ 匯出 HTML</button>
+    <button class="fp-btn orange" id="btn-export-pdf" onclick="exportPDF()">📄 匯出 PDF</button>
+  </div>
+</div>
+
+<div id="editor-wrap">
+<div class="resume-page" id="resume">
+
+  <input type="file" id="avatar-upload" accept="image/*" style="display: none;">
+  <input type="file" id="img-upload" accept="image/*" style="display: none;">
+
+  <svg class="ink-deco" style="top:0;right:0;width:180px;height:220px;" viewBox="0 0 180 220" xmlns="http://www.w3.org/2000/svg">
+    <defs><filter id="ink-tr"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="1.5" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+    <g filter="url(#ink-tr)" opacity="0.18">
+      <path d="M155 0 C153 30 156 55 152 80 C149 105 153 130 150 160 C148 185 152 205 150 220" stroke="#1a3d28" stroke-width="5" fill="none" stroke-linecap="round"/>
+      <ellipse cx="153" cy="52" rx="5" ry="2" fill="#1a3d28" opacity="0.7"/>
+      <ellipse cx="151" cy="108" rx="5" ry="2" fill="#1a3d28" opacity="0.7"/>
+      <ellipse cx="150" cy="162" rx="4.5" ry="1.8" fill="#1a3d28" opacity="0.7"/>
+      <path d="M172 0 C170 25 174 50 170 78 C167 100 171 128 168 155 C166 175 170 200 168 220" stroke="#1a3d28" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+      <path d="M152 52 C138 44 118 38 105 28" stroke="#1a3d28" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+      <path d="M105 28 C98 22 88 16 78 8" stroke="#1a3d28" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+      <path d="M118 36 C112 26 100 20 92 12" stroke="#1a3d28" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+      <path d="M130 40 C122 28 115 18 110 6" stroke="#1a3d28" stroke-width="1.3" fill="none" stroke-linecap="round"/>
+      <path d="M151 108 C140 98 125 90 112 80" stroke="#1a3d28" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <path d="M112 80 C102 72 88 62 76 52" stroke="#1a3d28" stroke-width="1.1" fill="none" stroke-linecap="round"/>
+      <path d="M150 162 C138 154 122 148 108 140" stroke="#1a3d28" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+    </g>
+  </svg>
+  <svg class="ink-deco" style="bottom:0;right:0;width:200px;height:150px;" viewBox="0 0 200 150" xmlns="http://www.w3.org/2000/svg">
+    <defs><filter id="ink-leaves"><feTurbulence type="fractalNoise" baseFrequency="0.75" numOctaves="3" result="noise"/><feDisplacementMap in="SourceGraphic" in2="noise" scale="2" xChannelSelector="R" yChannelSelector="G"/></filter></defs>
+    <g filter="url(#ink-leaves)">
+      <g opacity="0.17" transform="translate(118, 95) rotate(-28)"><path d="M0 0 C-6 -18 -2 -36 8 -52 C18 -36 22 -18 16 0 C10 8 4 10 0 0 Z" fill="#1a3d28"/></g>
+      <g opacity="0.14" transform="translate(68, 118) rotate(15)"><path d="M0 0 C-5 -14 -1 -28 6 -40 C14 -28 17 -14 12 0 C8 6 3 8 0 0 Z" fill="#1a3d28"/></g>
+      <g opacity="0.12" transform="translate(158, 58) rotate(-48)"><path d="M0 0 C-4 -10 -1 -21 5 -30 C11 -21 13 -10 9 0 C6 5 2 6 0 0 Z" fill="#1a3d28"/></g>
+      <g opacity="0.09"><path d="M200 150 C180 130 155 120 118 95" stroke="#1a3d28" stroke-width="1.2" fill="none" stroke-linecap="round" stroke-dasharray="3 5"/></g>
+    </g>
+  </svg>
+
+  <div class="header-section">
+    <div class="header-top">
+      <div class="avatar-circle" id="avatar-display" title="點擊上傳大頭貼"><span id="avatar-text">陳</span><div class="avatar-resize-handle" id="avatar-resize-handle"></div><div id="avatar-zoom-tip"></div></div>
+      <div class="name-block">
+        <h1 contenteditable="true">陳 雅 涵</h1>
+        <div class="title-tag" contenteditable="true">資深產品設計師 ／ UX DESIGNER</div>
+      </div>
+    </div>
+    <div class="contact-row" id="contact-row">
+      <div class="contact-item deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="contact-dot"></div><span contenteditable="true"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="a5dcc4cdc4cb8bc6cdc0cbe5c2c8c4ccc98bc6cac8">[email&#160;protected]</a></span></div>
+      <div class="contact-item deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="contact-dot"></div><span contenteditable="true">+886 912 345 678</span></div>
+      <div class="contact-item deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="contact-dot"></div><span contenteditable="true">台北市大安區</span></div>
+      <div class="contact-item deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="contact-dot"></div><span contenteditable="true">linkedin.com/in/yahanchen</span></div>
+    </div>
+    <button class="add-btn" onclick="addContact()" style="color:rgba(255,255,255,0.5);margin-top:8px;">新增聯絡資訊</button>
+  </div>
+
+  <div class="body-section">
+    <div class="sidebar">
+
+      <div class="sidebar-section">
+        <div class="section-title"><div class="section-icon"></div><span contenteditable="true">專業技能</span></div>
+        <div class="tag-list" id="skills-list">
+          <span class="tag deletable" contenteditable="true" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>UI / UX 設計</span>
+          <span class="tag deletable" contenteditable="true" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>Figma / Sketch</span>
+          <span class="tag deletable" contenteditable="true" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>使用者研究</span>
+          <span class="tag deletable" contenteditable="true" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>HTML / CSS</span>
+          <span class="tag deletable" contenteditable="true" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>原型設計</span>
+        </div>
+        <button class="add-btn" onclick="addSkill()">新增技能</button>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title"><div class="section-icon"></div><span contenteditable="true">學歷</span></div>
+        <div id="edu-list">
+          <div class="edu-item deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <span class="edu-degree" contenteditable="true">設計學系 碩士</span>
+            <span class="edu-school" contenteditable="true">國立臺灣師範大學</span>
+            <span class="edu-year" contenteditable="true">2016 — 2018</span>
+          </div>
+          <div class="edu-item deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <span class="edu-degree" contenteditable="true">視覺傳達設計 學士</span>
+            <span class="edu-school" contenteditable="true">輔仁大學</span>
+            <span class="edu-year" contenteditable="true">2012 — 2016</span>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addEdu()">新增學歷</button>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title"><div class="section-icon"></div><span contenteditable="true">語言能力</span></div>
+        <div id="lang-list">
+          <div class="lang-item deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="lang-name" contenteditable="true">中文</span><span class="lang-level" contenteditable="true">母語</span></div>
+          <div class="lang-item deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="lang-name" contenteditable="true">英文</span><span class="lang-level" contenteditable="true">流利（TOEIC 900）</span></div>
+        </div>
+        <button class="add-btn" onclick="addLanguage()">新增語言</button>
+      </div>
+
+    </div>
+
+    <div class="main-content">
+
+      <div class="main-section">
+        <div class="section-title"><div class="section-icon"></div><span contenteditable="true">個人簡介</span></div>
+        <p class="summary-text" contenteditable="true">擁有七年以上的產品設計經驗，專注於創造兼具美感與功能性的數位體驗。善於跨部門協作，將使用者洞察轉化為直覺且有溫度的設計解決方案。</p>
+      </div>
+
+      <div class="main-section">
+        <div class="section-title"><div class="section-icon"></div><span contenteditable="true">代表作品</span></div>
+        <div id="portfolio-list">
+          <div class="experience-item deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <div class="exp-header"><div class="exp-title" contenteditable="true">企業設計系統 v2.0</div><div class="exp-date" contenteditable="true">2023</div></div>
+            <div class="exp-desc" contenteditable="true">從零到一建立包含 200+ 元件的設計系統，支援 Web、iOS、Android 三平台，並撰寫完整設計規範文件供全公司工程師使用。</div>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addPortfolio()">新增作品</button>
+      </div>
+      
+      <div class="main-section">
+        <div class="section-title"><div class="section-icon"></div><span contenteditable="true">專業證照</span></div>
+        <div id="cert-list">
+          <div class="experience-item deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <div class="exp-header"><div class="exp-title" contenteditable="true">AWS Certified Solutions Architect - Associate</div><div class="exp-date" contenteditable="true">2026</div></div>
+            <div class="exp-desc" contenteditable="true">具備設計高可用性、高容錯性以及可擴展性雲端系統架構的能力，能有效規劃與部署雲端基礎設施。</div>
+          </div>
+        </div>
+        <button class="add-btn" onclick="addCert()">新增證照</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="footer-strip"><div class="footer-inner"></div></div>
+</div>
+
+<!-- 米紙暖調模板 -->
+<div class="resume-page tpl-warm" id="resume-warm" style="display:none;">
+  <input type="file" id="avatar-upload-warm" accept="image/*" style="display:none;">
+  <div class="w-body">
+    <div class="w-sidebar">
+      <div class="w-hero">
+        <div class="w-avatar" id="w-avatar-display" title="點擊上傳大頭貼"><span id="w-avatar-text">王</span></div>
+        <h1 class="w-name" contenteditable="true">王小明</h1>
+        <div class="w-title-tag" contenteditable="true">前端工程師</div>
+      </div>
+
+      <div class="w-section">
+        <div class="w-section-title"><span contenteditable="true">聯絡資訊</span></div>
+        <div id="w-contact-list">
+          <div class="w-contact deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-contact-icon">✉</span><span contenteditable="true">taipei@example.com</span></div>
+          <div class="w-contact deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-contact-icon">☏</span><span contenteditable="true">0912-345-678</span></div>
+          <div class="w-contact deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-contact-icon">⌖</span><span contenteditable="true">台北市, 台灣</span></div>
+          <div class="w-contact deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-contact-icon">⊞</span><span contenteditable="true">linkedin.com/in/wangxm</span></div>
+        </div>
+        <button class="add-btn w-add-btn" onclick="addWContact()">新增聯絡</button>
+      </div>
+
+      <div class="w-section">
+        <div class="w-section-title"><span contenteditable="true">技能</span></div>
+        <div class="w-tag-list" id="w-skills-list">
+          <span class="w-tag deletable" contenteditable="true" draggable="true"><button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>React</span>
+          <span class="w-tag deletable" contenteditable="true" draggable="true"><button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>TypeScript</span>
+          <span class="w-tag deletable" contenteditable="true" draggable="true"><button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>Node.js</span>
+          <span class="w-tag deletable" contenteditable="true" draggable="true"><button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>Python</span>
+          <span class="w-tag deletable" contenteditable="true" draggable="true"><button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>Docker</span>
+          <span class="w-tag deletable" contenteditable="true" draggable="true"><button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>Git</span>
+          <span class="w-tag deletable" contenteditable="true" draggable="true"><button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>UI/UX 設計</span>
+        </div>
+        <button class="add-btn w-add-btn" onclick="addWSkill()">新增技能</button>
+      </div>
+
+      <div class="w-section">
+        <div class="w-section-title"><span contenteditable="true">語言</span></div>
+        <div id="w-lang-list">
+          <div class="w-lang deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-lang-name" contenteditable="true">中文</span><span class="w-lang-level" contenteditable="true">母語</span></div>
+          <div class="w-lang deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-lang-name" contenteditable="true">英文</span><span class="w-lang-level" contenteditable="true">流利</span></div>
+          <div class="w-lang deletable" draggable="true"><button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-lang-name" contenteditable="true">日文</span><span class="w-lang-level" contenteditable="true">基礎會話</span></div>
+        </div>
+        <button class="add-btn w-add-btn" onclick="addWLanguage()">新增語言</button>
+      </div>
+
+      <div class="w-section">
+        <div class="w-section-title"><span contenteditable="true">學歷</span></div>
+        <div id="w-edu-list">
+          <div class="w-edu deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <span class="w-edu-school" contenteditable="true">國立台灣大學</span>
+            <span class="w-edu-degree" contenteditable="true">資訊工程學系</span>
+            <span class="w-edu-year" contenteditable="true">2015 – 2019</span>
+          </div>
+        </div>
+        <button class="add-btn w-add-btn" onclick="addWEdu()">新增學歷</button>
+      </div>
+    </div>
+
+    <div class="w-main">
+      <div class="w-main-section">
+        <div class="w-main-title"><span contenteditable="true">個人簡介</span></div>
+        <p class="w-summary" contenteditable="true">擁有 5 年以上前端開發經驗，專注於 React 生態系與高效能 Web 應用。熱衷於良好的程式架構與使用者體驗設計，具備跨部門協作能力，能快速適應新技術與需求變化，並帶領團隊達成產品目標。</p>
+      </div>
+
+      <div class="w-main-section">
+        <div class="w-main-title"><span contenteditable="true">工作經歷</span></div>
+        <div id="w-exp-list">
+          <div class="w-exp deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <div class="w-exp-header"><div><div class="w-exp-title" contenteditable="true">資深前端工程師</div><div class="w-exp-company" contenteditable="true">科技股份有限公司，台北</div></div><div class="w-exp-date" contenteditable="true">2022 – 現今</div></div>
+            <div class="w-exp-desc" contenteditable="true">帶領前端團隊重構核心產品，導入 TypeScript 與元件化架構，將頁面載入速度提升 40%；主導設計系統建置，統一跨平台使用者體驗，帶領 3 名工程師進行日常開發與 Code Review。</div>
+          </div>
+          <div class="w-exp deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <div class="w-exp-header"><div><div class="w-exp-title" contenteditable="true">前端工程師</div><div class="w-exp-company" contenteditable="true">數位行銷有限公司，台北</div></div><div class="w-exp-date" contenteditable="true">2019 – 2022</div></div>
+            <div class="w-exp-desc" contenteditable="true">負責多個電商平台前端開發，與 UI/UX 國際緊密合作，使用 React + Redux 完成複雜的互動功能，並協助初級工程師技術成長。</div>
+          </div>
+        </div>
+        <button class="add-btn w-add-btn" onclick="addWExp()">新增經歷</button>
+      </div>
+
+      <div class="w-main-section">
+        <div class="w-main-title"><span contenteditable="true">專案作品</span></div>
+        <div id="w-proj-list">
+          <div class="w-proj deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <div class="w-proj-header"><div class="w-proj-title" contenteditable="true">電商管理後台系統</div><div class="w-proj-date" contenteditable="true">2023</div></div>
+            <div class="w-proj-desc" contenteditable="true">使用 React + Ant Design 開發全端電商後台，支援多語系與角色權限管理；後端採 Node.js + PostgreSQL，部署於 AWS，月活躍用戶達 5,000 人。</div>
+          </div>
+        </div>
+        <button class="add-btn w-add-btn" onclick="addWProj()">新增作品</button>
+      </div>
+
+      <div class="w-main-section">
+        <div class="w-main-title"><span contenteditable="true">證照與獎項</span></div>
+        <div id="w-cert-list">
+          <div class="w-cert deletable" draggable="true">
+            <button class="del-btn" onclick="this.parentElement.remove()">×</button>
+            <div class="w-cert-header"><div class="w-cert-title" contenteditable="true">AWS Solutions Architect Associate</div><div class="w-cert-date" contenteditable="true">2023</div></div>
+            <div class="w-cert-desc" contenteditable="true">Amazon Web Services 官方認證雲端架構師資格。</div>
+          </div>
+        </div>
+        <button class="add-btn w-add-btn" onclick="addWCert()">新增證照</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<div id="save-toast">✓ 匯出成功</div>
+
+<div id="img-bar">
+  <span class="fmt-label">寬度</span>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="changeImgWidth(-10)">－</button>
+  <span class="fmt-size-display" id="img-size-val">200</span>
+  <span style="font-size:10px;color:#6b7080;">px</span>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="changeImgWidth(10)">＋</button>
+  <div class="fmt-sep"></div>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="setImgAlign('left')" title="靠左">◧</button>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="setImgAlign('center')" title="置中">◫</button>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="setImgAlign('right')" title="靠右">◨</button>
+  <div class="fmt-sep"></div>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="removeSelectedImg()" style="color:#ff6666;border-color:#ff444433;">刪除</button>
+</div>
+
+<div id="format-bar">
+  <span class="fmt-label">字級</span>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="changeSize(-1)">－</button>
+  <span class="fmt-size-display" id="fmt-size-val">12</span>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="changeSize(1)">＋</button>
+  <div class="fmt-sep"></div>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="execFmt('bold')" title="粗體"><b>B</b></button>
+  <button class="fmt-btn" onmousedown="event.preventDefault()" onclick="execFmt('italic')" title="斜體"><i>I</i></button>
+  <div class="fmt-sep"></div>
+  <span class="fmt-label">顏色</span>
+  <div class="fmt-color-wrap" title="文字顏色">
+    <div class="fmt-color-swatch" id="fmt-color-swatch"></div>
+    <input type="color" id="fmt-color-input" value="#e06060">
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+/* 主題定義與其他邏輯維持原樣 */
+const themes = {
+  green: { dark:'#1a7a52', mid:'#33FFAA', light:'#66ffcc', accent:'#00cc88', pale:'#99ffdd', bgSide:'#f7fffe', border:'#ccfff0', ink:'#0d2e20', inkMid:'#1e4d38', inkLight:'#3a7a5c' },
+  navy:  { dark:'#1a3d7a', mid:'#33AAFF', light:'#66ccff', accent:'#0077cc', pale:'#99ccff', bgSide:'#f7f9ff', border:'#cce0ff', ink:'#0d1a2e', inkMid:'#1e3450', inkLight:'#3a5a7a' },
+  plum:  { dark:'#7a1a4a', mid:'#FF66CC', light:'#ff99dd', accent:'#cc0077', pale:'#ffb3dd', bgSide:'#fff7fb', border:'#ffd6ee', ink:'#2e0d1a', inkMid:'#501e38', inkLight:'#7a3a5a' },
+  earth: { dark:'#7a4a1a', mid:'#FFCC66', light:'#ffdd99', accent:'#cc8800', pale:'#ffe0a3', bgSide:'#fffcf7', border:'#ffe8c0', ink:'#2e1a0d', inkMid:'#50331e', inkLight:'#7a5a3a' },
+  ink:   { dark:'#2a2a2a', mid:'#AAAAAA', light:'#cccccc', accent:'#666666', pale:'#cccccc', bgSide:'#f8f8f8', border:'#e0e0e0', ink:'#111111', inkMid:'#333333', inkLight:'#555555' },
+};
+
+let activeTheme = themes.green;
+
+function hexToRgba(hex, alpha) {
+  let c = hex.replace('#', '');
+  if (c.length === 3) c = c.split('').map(ch => ch + ch).join('');
+  const r = parseInt(c.slice(0, 2), 16);
+  const g = parseInt(c.slice(2, 4), 16);
+  const b = parseInt(c.slice(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+document.querySelectorAll('.theme-pill').forEach(pill => {
+  pill.addEventListener('click', () => {
+    document.querySelectorAll('.theme-pill').forEach(p => p.classList.remove('active'));
+    pill.classList.add('active');
+    const t = themes[pill.dataset.theme];
+    activeTheme = t;
+    const r = document.documentElement.style;
+    r.setProperty('--bamboo-dark', t.dark);
+    r.setProperty('--bamboo-mid', t.mid);
+    r.setProperty('--bamboo-light', t.light);
+    r.setProperty('--bamboo-accent', t.accent);
+    r.setProperty('--bamboo-pale', t.pale);
+    r.setProperty('--bg-side', t.bgSide);
+    r.setProperty('--border', t.border);
+    r.setProperty('--ink', t.ink);
+    r.setProperty('--ink-mid', t.inkMid);
+    r.setProperty('--ink-light', t.inkLight);
+    document.getElementById('fp-toggle').style.background = t.dark;
+  });
+});
+
+/* 頭像上傳邏輯 */
+const avatarDisplay = document.getElementById('avatar-display');
+const avatarUpload = document.getElementById('avatar-upload');
+let avatarDragMoved = false;
+avatarDisplay.addEventListener('click', () => { if (!avatarDragMoved) avatarUpload.click(); });
+
+/* 大頭貼大小調整 ＋ 圖片位置拖曳 */
+let avatarBgX = 50, avatarBgY = 50, avatarZoom = 100;
+(function() {
+  const handle = document.getElementById('avatar-resize-handle');
+  const zoomTip = document.getElementById('avatar-zoom-tip');
+  let zoomTimer;
+
+  function applyZoom(pct) {
+    avatarZoom = Math.max(50, Math.min(400, pct));
+    avatarDisplay.style.backgroundSize = avatarZoom + '%';
+    zoomTip.textContent = Math.round(avatarZoom) + '%';
+    zoomTip.classList.add('show');
+    clearTimeout(zoomTimer);
+    zoomTimer = setTimeout(() => zoomTip.classList.remove('show'), 1000);
+  }
+
+  avatarDisplay.addEventListener('wheel', e => {
+    if (!avatarDisplay.style.backgroundImage) return;
+    e.preventDefault();
+    applyZoom(avatarZoom + (e.deltaY < 0 ? 5 : -5));
+  }, { passive: false });
+
+  /* 縮放 */
+  handle.addEventListener('mousedown', e => {
+    e.preventDefault();
+    e.stopPropagation();
+    const startX = e.clientX;
+    const startSize = avatarDisplay.offsetWidth;
+    function onMove(e) {
+      const newSize = Math.max(60, Math.min(180, Math.round(startSize + e.clientX - startX)));
+      avatarDisplay.style.width = newSize + 'px';
+      avatarDisplay.style.height = newSize + 'px';
+      avatarDisplay.style.fontSize = Math.round(newSize * 0.34) + 'px';
+    }
+    function onUp() {
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+
+  /* 圖片位置拖曳 */
+  avatarDisplay.addEventListener('mousedown', e => {
+    if (e.target === handle) return;
+    if (!avatarDisplay.style.backgroundImage) return;
+    e.preventDefault();
+    avatarDragMoved = false;
+    const startX = e.clientX, startY = e.clientY;
+    const startBgX = avatarBgX, startBgY = avatarBgY;
+    avatarDisplay.style.cursor = 'grabbing';
+    function onMove(e) {
+      const size = avatarDisplay.offsetWidth;
+      const dx = (e.clientX - startX) / size * 100;
+      const dy = (e.clientY - startY) / size * 100;
+      if (Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3) avatarDragMoved = true;
+      avatarBgX = Math.max(0, Math.min(100, startBgX - dx));
+      avatarBgY = Math.max(0, Math.min(100, startBgY - dy));
+      avatarDisplay.style.backgroundPosition = `${avatarBgX}% ${avatarBgY}%`;
+    }
+    function onUp() {
+      avatarDisplay.style.cursor = 'grab';
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    }
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  });
+})();
+avatarUpload.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target.result;
+      avatarDisplay.style.backgroundImage = `url('${dataUrl}')`;
+      avatarDisplay.style.backgroundPosition = '50% 50%';
+      avatarBgX = 50; avatarBgY = 50;
+      avatarDisplay.style.cursor = 'grab';
+      document.getElementById('avatar-text').textContent = '';
+      // 計算剛好 cover 所需的初始縮放百分比
+      const tmp = new Image();
+      tmp.onload = () => {
+        avatarZoom = tmp.naturalWidth >= tmp.naturalHeight
+          ? Math.round(tmp.naturalWidth / tmp.naturalHeight * 100)
+          : 100;
+        avatarDisplay.style.backgroundSize = avatarZoom + '%';
+      };
+      tmp.src = dataUrl;
+    };
+    reader.readAsDataURL(file);
+  }
+});
+
+
+/* 拖曳排序邏輯 */
+let dragSrcEl = null;
+function handleDragStart(e) {
+  if(e.target.tagName === 'SPAN' || e.target.hasAttribute('contenteditable') && e.target !== this) {
+    e.preventDefault(); return;
+  }
+  dragSrcEl = this; e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setData('text/html', this.outerHTML);
+  setTimeout(() => this.style.opacity = '0.4', 0);
+}
+function handleDragOver(e) { if (e.preventDefault) e.preventDefault(); e.dataTransfer.dropEffect = 'move'; return false; }
+function handleDragEnter(e) { this.classList.add('drag-over'); }
+function handleDragLeave(e) { this.classList.remove('drag-over'); }
+function handleDrop(e) {
+  if (e.stopPropagation) e.stopPropagation();
+  this.classList.remove('drag-over');
+  if (dragSrcEl !== this && dragSrcEl.parentNode === this.parentNode) {
+    this.parentNode.insertBefore(dragSrcEl, this.nextSibling || this);
+  }
+  return false;
+}
+function handleDragEnd(e) {
+  this.style.opacity = '1';
+  document.querySelectorAll('.deletable').forEach(item => item.classList.remove('drag-over'));
+}
+function enableSortable(el) {
+  el.addEventListener('dragstart', handleDragStart);
+  el.addEventListener('dragenter', handleDragEnter);
+  el.addEventListener('dragover', handleDragOver);
+  el.addEventListener('dragleave', handleDragLeave);
+  el.addEventListener('drop', handleDrop);
+  el.addEventListener('dragend', handleDragEnd);
+}
+document.querySelectorAll('.deletable').forEach(enableSortable);
+
+/* 新增功能 */
+function addExperience() {
+  const el = document.createElement('div'); el.className = 'experience-item deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="exp-header"><div class="exp-title" contenteditable="true">職位名稱</div><div class="exp-date" contenteditable="true">年份 — 年份</div></div><div class="exp-desc" contenteditable="true">公司名稱｜工作內容描述...</div>`;
+  document.getElementById('exp-list').appendChild(el); enableSortable(el); el.querySelector('.exp-title').focus();
+}
+function addPortfolio() {
+  const el = document.createElement('div'); el.className = 'experience-item deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="exp-header"><div class="exp-title" contenteditable="true">作品名稱</div><div class="exp-date" contenteditable="true">年份</div></div><div class="exp-desc" contenteditable="true">作品描述...</div>`;
+  document.getElementById('portfolio-list').appendChild(el); enableSortable(el); el.querySelector('.exp-title').focus();
+}
+function addCert() {
+  const el = document.createElement('div'); el.className = 'experience-item deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="exp-header"><div class="exp-title" contenteditable="true">證照名稱</div><div class="exp-date" contenteditable="true">年份</div></div><div class="exp-desc" contenteditable="true">證照說明或取得單位...</div>`;
+  document.getElementById('cert-list').appendChild(el); enableSortable(el); el.querySelector('.exp-title').focus();
+}
+function addSkill() {
+  const el = document.createElement('span'); el.className = 'tag deletable'; el.draggable = true; el.contentEditable = 'true';
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>新技能`;
+  document.getElementById('skills-list').appendChild(el); enableSortable(el); el.focus();
+}
+function addTool() {
+  const el = document.createElement('span'); el.className = 'tag deletable'; el.draggable = true; el.contentEditable = 'true';
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()" style="right:-6px;top:-6px;">×</button>新工具`;
+  document.getElementById('tools-list').appendChild(el); enableSortable(el); el.focus();
+}
+function addLanguage() {
+  const el = document.createElement('div'); el.className = 'lang-item deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="lang-name" contenteditable="true">語言</span><span class="lang-level" contenteditable="true">程度</span>`;
+  document.getElementById('lang-list').appendChild(el); enableSortable(el); el.querySelector('.lang-name').focus();
+}
+function addEdu() {
+  const el = document.createElement('div'); el.className = 'edu-item deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="edu-degree" contenteditable="true">學位名稱</span><span class="edu-school" contenteditable="true">學校名稱</span><span class="edu-year" contenteditable="true">年份 — 年份</span>`;
+  document.getElementById('edu-list').appendChild(el); enableSortable(el); el.querySelector('.edu-degree').focus();
+}
+function addContact() {
+  const el = document.createElement('div'); el.className = 'contact-item deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="contact-dot"></div><span contenteditable="true">新聯絡資訊</span>`;
+  document.getElementById('contact-row').appendChild(el); enableSortable(el); el.querySelector('span').focus();
+}
+
+/* 改良版浮動格式列 - 修正字體卡住的 Bug */
+(function() {
+  const bar = document.getElementById('format-bar');
+  const sizeVal = document.getElementById('fmt-size-val');
+  const colorSwatch = document.getElementById('fmt-color-swatch');
+  const colorInput = document.getElementById('fmt-color-input');
+  let currentSize = 12, pickerOpen = false, activeEditable = null;
+
+  function getFontSize(el) {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      let node = sel.anchorNode;
+      if (el.contains(node)) {
+        if (node.nodeType === 3) node = node.parentNode;
+        if (node) {
+          return Math.round(parseFloat(window.getComputedStyle(node).fontSize)) || 12;
+        }
+      }
+    }
+    return Math.round(parseFloat(window.getComputedStyle(el).fontSize)) || 12;
+  }
+
+  function repositionBar(el) {
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    bar.style.display = 'flex';
+    const bw = bar.offsetWidth || 180, bh = bar.offsetHeight || 40;
+
+    let left = rect.left + rect.width / 2 - bw / 2;
+    let top  = rect.top - bh - 10;
+
+    if (left < 10) left = 10;
+    if (left + bw > window.innerWidth - 10) left = window.innerWidth - bw - 10;
+    if (top < 65) top = rect.bottom + 10;
+    if (top + bh > window.innerHeight) top = window.innerHeight - bh - 10;
+
+    bar.style.left = left + 'px';
+    bar.style.top  = top + 'px';
+  }
+
+  function show(el) {
+    if (!el || !el.hasAttribute('contenteditable')) return;
+    activeEditable = el;
+    currentSize = getFontSize(el);
+    sizeVal.textContent = currentSize;
+    repositionBar(el);
+  }
+
+  function hide() {
+    if (pickerOpen) return;
+    bar.style.display = 'none';
+    activeEditable = null;
+  }
+
+  document.addEventListener('mousedown', e => {
+    if (bar.contains(e.target) || e.target === colorInput) return;
+    const editable = e.target.closest('[contenteditable]');
+    if (editable) {
+      setTimeout(() => show(editable), 10);
+    } else {
+      hide();
+    }
+  });
+
+  document.addEventListener('keyup', e => {
+    if (bar.contains(e.target)) return;
+    const editable = e.target.closest('[contenteditable]');
+    if (editable) {
+      setTimeout(() => show(editable), 10);
+    }
+  });
+
+  window.changeSize = function(delta) {
+    if (!activeEditable) return;
+    currentSize = Math.max(8, Math.min(72, currentSize + delta));
+    sizeVal.textContent = currentSize;
+
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && activeEditable.contains(sel.anchorNode)) {
+      document.execCommand("styleWithCSS", false, true);
+      const span = document.createElement('span');
+      span.style.fontSize = currentSize + 'px';
+      const range = sel.getRangeAt(0);
+      try {
+        range.surroundContents(span);
+      } catch(e) {
+        document.execCommand("fontSize", false, "7");
+        document.querySelectorAll('font[size="7"]').forEach(font => {
+            font.removeAttribute("size");
+            font.style.fontSize = currentSize + 'px';
+        });
+      }
+    } else {
+      activeEditable.style.fontSize = currentSize + 'px';
+      activeEditable.querySelectorAll('span, font').forEach(child => {
+          child.style.fontSize = '';
+      });
+    }
+    
+    setTimeout(() => repositionBar(activeEditable), 10);
+  };
+
+  window.execFmt = function(cmd) {
+    if (!activeEditable) return;
+    document.execCommand(cmd, false, null);
+    activeEditable.focus();
+  };
+
+  colorInput.addEventListener('mousedown', () => { pickerOpen = true; });
+  colorInput.addEventListener('input', () => {
+    const color = colorInput.value;
+    colorSwatch.style.background = color;
+    if (!activeEditable) return;
+
+    const sel = window.getSelection();
+    if (sel && !sel.isCollapsed && activeEditable.contains(sel.anchorNode)) {
+      document.execCommand("styleWithCSS", false, true);
+      document.execCommand("foreColor", false, color);
+    } else {
+      activeEditable.style.color = color;
+      activeEditable.querySelectorAll('span, font').forEach(child => {
+         child.style.color = '';
+      });
+    }
+  });
+  colorInput.addEventListener('change', () => {
+    pickerOpen = false;
+    if(activeEditable) activeEditable.focus();
+  });
+})();
+
+/* 匯出 HTML */
+function exportHTML() {
+  if (activeTemplate === 'warm') { exportWarmHTML(); return; }
+  const t = activeTheme;
+  const rootCSS = `
+  :root {
+    --bamboo-dark: ${t.dark}; --bamboo-mid: ${t.mid}; --bamboo-light: ${t.light}; --bamboo-pale: ${t.pale}; --bamboo-accent: ${t.accent};
+    --bg: #ffffff; --bg-side: ${t.bgSide}; --ink: ${t.ink}; --ink-mid: ${t.inkMid}; --ink-light: ${t.inkLight}; --border: ${t.border};
+  }`;
+
+  const clone = document.getElementById('resume').cloneNode(true);
+  clone.querySelectorAll('.add-btn, .del-btn, .page-del-btn, .extra-page-tools, .avatar-resize-handle, #avatar-zoom-tip, .img-resize-handle, input[type="file"]').forEach(el => el.remove());
+  clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+  clone.querySelectorAll('.deletable').forEach(el => { el.classList.remove('deletable'); el.removeAttribute('draggable'); });
+  clone.querySelectorAll('.avatar-circle').forEach(el => { el.style.backgroundColor = hexToRgba(t.mid, 0.15); el.style.cursor = 'default'; });
+
+  const html = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>履歷</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #f0f4f2; display: flex; justify-content: center; padding: 40px 20px; min-height: 100vh; }
+  ${rootCSS}
+  .resume-page { background:var(--bg); font-family:'Noto Sans TC',sans-serif; color:var(--ink); width:794px; min-height:1122px; position:relative; border:1px solid var(--border); box-shadow:0 8px 40px rgba(0,0,0,0.12); }
+  .ink-deco { position:absolute; pointer-events:none; z-index:2; }
+  .header-section { background:var(--bamboo-dark); color:#fff; padding:22px 48px 18px; position:relative; z-index:1; }
+  .header-top { display:flex; align-items:flex-end; gap:28px; margin-bottom:16px; }
+  .avatar-circle { width:105px; height:105px; border-radius:50%; border:2.5px solid var(--bamboo-mid); background-color: ${hexToRgba(t.mid, 0.15)}; background-size: cover; background-position: center; display:flex; align-items:center; justify-content:center; font-family:'Noto Serif TC',serif; font-size:36px; font-weight:700; color:var(--bamboo-mid); flex-shrink:0; }
+  .name-block h1 { font-family:'Noto Serif TC',serif; font-size:32px; font-weight:700; letter-spacing:4px; color:#fff; line-height:1.2; }
+  .name-block .title-tag { margin-top:6px; font-size:13px; font-weight:300; letter-spacing:3px; color:var(--bamboo-mid); }
+  .contact-row { display:flex; gap:24px; flex-wrap:wrap; margin-top:16px; padding-top:16px; border-top:1px solid ${hexToRgba(t.mid, 0.2)}; }
+  .contact-item { font-size:12px; color:rgba(255,255,255,0.75); letter-spacing:1px; display:flex; align-items:center; gap:6px; }
+  .contact-dot { width:4px; height:4px; background:var(--bamboo-mid); border-radius:50%; }
+  .body-section { display:grid; grid-template-columns:220px 1fr; position:relative; z-index:1; }
+  .sidebar { background:var(--bg-side); padding:32px 24px; border-right:1px solid var(--border); }
+  .main-content { padding:32px 36px; background:var(--bg); }
+  .section-title { font-family:'Noto Serif TC',serif; font-size:11px; font-weight:500; letter-spacing:3px; color:var(--bamboo-dark); text-transform:uppercase; margin-bottom:14px; padding-bottom:8px; border-bottom:2px solid var(--bamboo-mid); display:flex; align-items:center; gap:8px; }
+  .section-icon { width:3px; height:16px; background:var(--bamboo-accent); border-radius:2px; }
+  .sidebar-section { margin-bottom:28px; }
+  .tag-list { display:flex; flex-wrap:wrap; gap:6px; }
+  .tag { font-size:11px; padding:4px 10px; background:${hexToRgba(t.bgSide, 0.9)}; color:var(--ink-mid); border-radius:20px; letter-spacing:0.5px; border:1px solid ${hexToRgba(t.pale, 0.8)}; }
+  .lang-item { display:flex; justify-content:space-between; align-items:center; margin-bottom:8px; font-size:12px; }
+  .lang-name { color:var(--ink-mid); letter-spacing:1px; }
+  .lang-level { font-size:11px; color:var(--bamboo-accent); letter-spacing:0.5px; }
+  .main-section { margin-bottom:28px; }
+  .experience-item { margin-bottom:20px; padding-left:16px; border-left:2px solid var(--bamboo-pale); position:relative; }
+  .experience-item::before { content:''; position:absolute; left:-5px; top:4px; width:8px; height:8px; background:var(--bamboo-mid); border-radius:50%; border:2px solid var(--bg); }
+  .exp-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:3px; }
+  .exp-title { font-family:'Noto Serif TC',serif; font-size:14px; font-weight:500; color:var(--ink); letter-spacing:1px; }
+  .exp-date { font-size:11px; color:var(--bamboo-accent); letter-spacing:1px; white-space:nowrap; margin-left:12px; margin-top:2px; }
+  .exp-desc { font-size:12px; color:var(--ink-mid); line-height:1.8; letter-spacing:0.5px; }
+  .edu-item { margin-bottom:16px; }
+  .edu-degree { font-family:'Noto Serif TC',serif; font-size:13px; font-weight:500; color:var(--ink); letter-spacing:1px; display:block; }
+  .edu-school { font-size:12px; color:var(--ink-light); letter-spacing:1px; margin-top:2px; display:block; }
+  .edu-year { font-size:11px; color:var(--bamboo-accent); letter-spacing:1px; margin-top:2px; display:block; }
+  .summary-text { font-size:12px; color:var(--ink-mid); line-height:1.8; letter-spacing:0.5px; border-left:3px solid var(--bamboo-mid); padding-left:14px; font-family:'Noto Sans TC',sans-serif; }
+  .footer-strip { background:var(--bamboo-dark); height:8px; position:relative; z-index:1; }
+  .footer-inner { height:100%; background:repeating-linear-gradient(90deg,transparent,transparent 40px,${hexToRgba(t.mid,0.15)} 40px,${hexToRgba(t.mid,0.15)} 42px); }
+
+/* ===== 列印 / PDF 匯出樣式 ===== */
+/* PDF via new window, no print CSS needed here */
+</style>
+</head>
+<body>
+${clone.outerHTML}
+</body>
+</html>`;
+
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'bamboo_resume.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+
+  const toast = document.getElementById('save-toast'); toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), 2000);
+}
+
+/* 用 Canvas 2D 重繪竹林裝飾，不依賴 SVG 濾鏡，確保列印可見 */
+function getBambooDecoDataUrl(type) {
+  const hex = activeTheme.dark;
+  let c = hex.replace('#','');
+  if (c.length===3) c=c.split('').map(x=>x+x).join('');
+  const r=parseInt(c.slice(0,2),16), g=parseInt(c.slice(2,4),16), b=parseInt(c.slice(4,6),16);
+  const ink = (a) => `rgba(${r},${g},${b},${a})`;
+
+  if (type === 'stalks') {
+    const cv = document.createElement('canvas');
+    cv.width = 360; cv.height = 440;
+    const ctx = cv.getContext('2d');
+    ctx.scale(2, 2); ctx.lineCap = 'round';
+
+    ctx.strokeStyle = ink(0.5); ctx.lineWidth = 5;
+    ctx.beginPath(); ctx.moveTo(155,0);
+    ctx.bezierCurveTo(153,30,156,55,152,80);
+    ctx.bezierCurveTo(149,105,153,130,150,160);
+    ctx.bezierCurveTo(148,185,152,205,150,220);
+    ctx.stroke();
+
+    ctx.fillStyle = ink(0.5);
+    [[153,52,5,2],[151,108,5,2],[150,162,4.5,1.8]].forEach(([cx,cy,rx,ry])=>{
+      ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.fill();
+    });
+
+    ctx.lineWidth = 3.5;
+    ctx.beginPath(); ctx.moveTo(172,0);
+    ctx.bezierCurveTo(170,25,174,50,170,78);
+    ctx.bezierCurveTo(167,100,171,128,168,155);
+    ctx.bezierCurveTo(166,175,170,200,168,220);
+    ctx.stroke();
+
+    [[1.8,152,52,138,44,118,38,105,28],[1.2,105,28,98,22,88,16,78,8],
+     [1.4,118,36,112,26,100,20,92,12],[1.3,130,40,122,28,115,18,110,6],
+     [1.6,151,108,140,98,125,90,112,80],[1.1,112,80,102,72,88,62,76,52],
+     [1.5,150,162,138,154,122,148,108,140]].forEach(([lw,x1,y1,cx1,cy1,cx2,cy2,x2,y2])=>{
+      ctx.lineWidth=lw; ctx.beginPath(); ctx.moveTo(x1,y1);
+      ctx.bezierCurveTo(cx1,cy1,cx2,cy2,x2,y2); ctx.stroke();
+    });
+    return cv.toDataURL('image/png');
+
+  } else {
+    const cv = document.createElement('canvas');
+    cv.width = 400; cv.height = 300;
+    const ctx = cv.getContext('2d');
+    ctx.scale(2, 2);
+
+    [{tx:118,ty:95,rot:-28,a:0.5},{tx:68,ty:118,rot:15,a:0.42},{tx:158,ty:58,rot:-48,a:0.32}].forEach(({tx,ty,rot,a})=>{
+      ctx.save(); ctx.translate(tx,ty); ctx.rotate(rot*Math.PI/180);
+      ctx.globalAlpha=a; ctx.fillStyle=`rgb(${r},${g},${b})`;
+      ctx.beginPath(); ctx.moveTo(0,0);
+      ctx.bezierCurveTo(-6,-18,-2,-36,8,-52);
+      ctx.bezierCurveTo(18,-36,22,-18,16,0);
+      ctx.bezierCurveTo(10,8,4,10,0,0);
+      ctx.closePath(); ctx.fill(); ctx.restore();
+    });
+
+    ctx.globalAlpha=0.25; ctx.strokeStyle=`rgb(${r},${g},${b})`;
+    ctx.lineWidth=1.2; ctx.setLineDash([3,5]);
+    ctx.beginPath(); ctx.moveTo(200,150);
+    ctx.bezierCurveTo(180,130,155,120,118,95); ctx.stroke();
+    return cv.toDataURL('image/png');
+  }
+}
+
+/* SVG ink-deco → canvas PNG（解決列印濾鏡破圖） */
+function rasterizeInkDeco(svg) {
+  return new Promise((resolve) => {
+    const rect = svg.getBoundingClientRect();
+    const w = Math.ceil(rect.width) || 180;
+    const h = Math.ceil(rect.height) || 220;
+    const svgStr = new XMLSerializer().serializeToString(svg);
+    const blob = new Blob([svgStr], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const tmpImg = new Image();
+    tmpImg.onload = () => {
+      const canvas = document.createElement('canvas');
+      canvas.width = w * 2; canvas.height = h * 2;
+      const ctx = canvas.getContext('2d');
+      ctx.scale(2, 2);
+      ctx.drawImage(tmpImg, 0, 0, w, h);
+      URL.revokeObjectURL(url);
+      resolve({ dataUrl: canvas.toDataURL('image/png'), w, h, style: svg.getAttribute('style') || '' });
+    };
+    tmpImg.onerror = () => { URL.revokeObjectURL(url); resolve(null); };
+    tmpImg.src = url;
+  });
+}
+
+/* 匯出 PDF — 開新視窗，乾淨列印，不含 UI 元素 */
+async function exportPDF() {
+  if (activeTemplate === 'warm') { await exportWarmPDF(); return; }
+  const t = activeTheme;
+
+  const rootCSS = `
+  :root {
+    --bamboo-dark:${t.dark};--bamboo-mid:${t.mid};--bamboo-light:${t.light};
+    --bamboo-pale:${t.pale};--bamboo-accent:${t.accent};
+    --bg:#ffffff;--bg-side:${t.bgSide};--ink:${t.ink};
+    --ink-mid:${t.inkMid};--ink-light:${t.inkLight};--border:${t.border};
+  }`;
+
+  const pages = document.querySelectorAll('.resume-page');
+  let pagesHTML = '';
+  pages.forEach((page, i) => {
+    const clone = page.cloneNode(true);
+    clone.querySelectorAll('.add-btn, .del-btn, .page-label, .page-del-btn, .extra-page-tools, .avatar-resize-handle, #avatar-zoom-tip, .img-resize-handle, input[type="file"]').forEach(el => el.remove());
+    clone.querySelectorAll('.ink-deco').forEach(el => el.remove());
+    clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+    clone.querySelectorAll('.avatar-circle').forEach(el => { el.style.backgroundColor = hexToRgba(t.mid, 0.15); el.style.cursor = 'default'; });
+    clone.style.cssText = '';
+    clone.classList.remove('extra-page');
+    pagesHTML += clone.outerHTML + '\n';
+  });
+
+  const cssText = `
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { width: 100%; min-height: 100%; }
+body { background: #fff; font-family: 'Noto Sans TC', sans-serif; }
+.resume-page {
+  width: 210mm;
+  min-height: 297mm;
+  height: 297mm;
+  position: relative;
+  overflow: hidden;
+  background: #ffffff;
+  color: ${t.ink};
+  border: 1px solid ${t.border};
+  box-shadow: 0 8px 40px rgba(0,0,0,0.12);
+  page-break-after: always;
+  break-after: page;
+  box-sizing: border-box;
+}
+.ink-deco { position: absolute; pointer-events: none; z-index: 2; }
+.header-section { background: ${t.dark}; color: #fff; padding: 22px 48px 18px; position: relative; z-index: 1; }
+.header-top { display: flex; align-items: flex-end; gap: 28px; margin-bottom: 16px; }
+.avatar-circle { width: 105px; height: 105px; border-radius: 50%; border: 2.5px solid ${t.mid}; background-color: ${hexToRgba(t.mid, 0.12)}; background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif TC', serif; font-size: 36px; font-weight: 700; color: ${t.mid}; flex-shrink: 0; }
+.name-block h1 { font-family: 'Noto Serif TC', serif; font-size: 32px; font-weight: 700; letter-spacing: 4px; color: #fff; line-height: 1.2; }
+.name-block .title-tag { margin-top: 6px; font-size: 13px; font-weight: 300; letter-spacing: 3px; color: ${t.mid}; }
+.contact-row { display: flex; gap: 24px; flex-wrap: wrap; margin-top: 16px; padding-top: 16px; border-top: 1px solid ${hexToRgba(t.mid, 0.2)}; }
+.contact-item { font-size: 12px; color: rgba(255,255,255,0.75); letter-spacing: 1px; display: flex; align-items: center; gap: 6px; }
+.contact-dot { width: 4px; height: 4px; background: ${t.mid}; border-radius: 50%; }
+.body-section { display: grid; grid-template-columns: 220px 1fr; position: relative; z-index: 1; }
+.sidebar { background: ${t.bgSide}; padding: 32px 24px; border-right: 1px solid ${t.border}; }
+.main-content { padding: 32px 36px; background: #ffffff; }
+.section-title { font-family: 'Noto Serif TC', serif; font-size: 11px; font-weight: 500; letter-spacing: 3px; color: ${t.dark}; text-transform: uppercase; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 2px solid ${t.mid}; display: flex; align-items: center; gap: 8px; }
+.section-icon { width: 3px; height: 16px; background: ${t.accent}; border-radius: 2px; }
+.sidebar-section { margin-bottom: 28px; }
+.tag-list { display: flex; flex-wrap: wrap; gap: 6px; }
+.tag { font-size: 11px; padding: 4px 10px; background: ${hexToRgba(t.bgSide, 0.9)}; color: ${t.inkMid}; border-radius: 20px; letter-spacing: 0.5px; border: 1px solid ${hexToRgba(t.pale, 0.8)}; }
+.lang-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-size: 12px; }
+.lang-name { color: ${t.inkMid}; letter-spacing: 1px; }
+.lang-level { font-size: 11px; color: ${t.accent}; letter-spacing: 0.5px; }
+.main-section { margin-bottom: 28px; page-break-inside: avoid; break-inside: avoid; }
+.experience-item { margin-bottom: 20px; padding-left: 16px; border-left: 2px solid ${t.pale}; position: relative; }
+.experience-item::before { content: ''; position: absolute; left: -5px; top: 4px; width: 8px; height: 8px; background: ${t.mid}; border-radius: 50%; border: 2px solid #ffffff; }
+.exp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.exp-title { font-family: 'Noto Serif TC', serif; font-size: 14px; font-weight: 500; color: ${t.ink}; letter-spacing: 1px; }
+.exp-date { font-size: 11px; color: ${t.accent}; letter-spacing: 1px; white-space: nowrap; margin-left: 12px; margin-top: 2px; }
+.exp-desc { font-size: 12px; color: ${t.inkMid}; line-height: 1.8; letter-spacing: 0.5px; }
+.edu-item { margin-bottom: 16px; }
+.edu-degree { font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 500; color: ${t.ink}; letter-spacing: 1px; display: block; }
+.edu-school { font-size: 12px; color: ${t.inkLight}; letter-spacing: 1px; margin-top: 2px; display: block; }
+.edu-year { font-size: 11px; color: ${t.accent}; letter-spacing: 1px; margin-top: 2px; display: block; }
+.summary-text { font-size: 12px; color: ${t.inkMid}; line-height: 1.8; letter-spacing: 0.5px; border-left: 3px solid ${t.mid}; padding-left: 14px; font-family: 'Noto Sans TC', sans-serif; }
+.footer-strip { background: ${t.dark}; height: 8px; position: fixed; bottom: 0; left: 0; width: 100%; z-index: 1; }
+.footer-inner { height: 100%; background: repeating-linear-gradient(90deg, transparent, transparent 40px, ${hexToRgba(t.mid, 0.15)} 40px, ${hexToRgba(t.mid, 0.15)} 42px); }
+`;
+
+  const printHTML = `<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+${rootCSS}
+${cssText}
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: #fff; }
+body { display: block; }
+.resume-page:last-child {
+        page-break-after: auto;
+        break-after: auto;
+}
+.resume-page:last-of-type { page-break-after: avoid; break-after: avoid; }
+[contenteditable] { outline: none; background: transparent !important; box-shadow: none !important; }
+@page { margin: 0; size: A4 portrait; }
+</style>
+</head>
+<body>
+${pagesHTML}
+<script>
+  window.onload = function() {
+    setTimeout(function() { window.print(); window.close(); }, 400);
+  };
+<\/script>
+</body>
+</html>`;
+
+  const pw = window.open('', '_blank', 'width=900,height=700');
+  pw.document.write(printHTML);
+  pw.document.close();
+}
+
+/* 新增頁面 */
+function addPage() {
+  const pageNum = document.querySelectorAll('.resume-page').length + 1;
+  const newPage = document.createElement('div');
+  newPage.className = 'resume-page extra-page';
+  newPage.id = 'resume-page-' + pageNum;
+  newPage.innerHTML = `
+    <span class="page-label">第 ${pageNum} 頁</span>
+    <button class="page-del-btn" onclick="deletePage(this)" title="刪除此頁">✕ 刪除頁面</button>
+    <div class="header-section" style="padding:20px 48px;">
+      <div class="name-block">
+        <div class="title-tag" contenteditable="true" style="font-size:15px;color:#fff;letter-spacing:3px;">（續頁）第 ${pageNum} 頁</div>
+      </div>
+    </div>
+    <div class="body-section" style="grid-template-columns:1fr;">
+      <div class="main-content" id="extra-main-${pageNum}">
+        <div class="extra-page-tools" style="display:flex;flex-wrap:wrap;gap:8px;padding:4px 0 16px;">
+          <button class="fp-btn" onclick="addTextSectionToPage(${pageNum})">＋ 文字區塊</button>
+          <button class="fp-btn" onclick="addExpSectionToPage(${pageNum})">＋ 經歷區塊</button>
+          <button class="fp-btn" onclick="document.getElementById('extra-img-upload-${pageNum}').click()">＋ 圖片</button>
+        </div>
+        <input type="file" id="extra-img-upload-${pageNum}" accept="image/*" style="display:none;" onchange="addImgToPage(this, ${pageNum})">
+      </div>
+    </div>
+    <div class="footer-strip"><div class="footer-inner"></div></div>
+  `;
+  document.getElementById('editor-wrap').appendChild(newPage);
+  newPage.querySelectorAll('[contenteditable]').forEach(el => {
+    el.addEventListener('mousedown', (e) => {
+      setTimeout(() => {
+        const fmtBar = document.getElementById('format-bar');
+        if(fmtBar) { fmtBar.style.display = 'flex'; }
+      }, 10);
+    });
+  });
+  const toast = document.getElementById('save-toast');
+  toast.textContent = '✓ 已新增第 ' + pageNum + ' 頁';
+  toast.classList.add('show');
+  setTimeout(() => { toast.classList.remove('show'); toast.textContent = '✓ 匯出成功'; }, 2500);
+  newPage.scrollIntoView({ behavior: 'smooth' });
+}
+
+function deletePage(btn) {
+  const page = btn.closest('.resume-page');
+  if (!page) return;
+  page.remove();
+  document.querySelectorAll('.resume-page').forEach((p, i) => {
+    const label = p.querySelector('.page-label');
+    if (label) label.textContent = '第 ' + (i + 1) + ' 頁';
+    const title = p.querySelector('.title-tag[contenteditable]');
+    if (title && title.textContent.startsWith('（續頁）')) title.textContent = '（續頁）第 ' + (i + 1) + ' 頁';
+  });
+}
+
+function addTextSectionToPage(pageNum) {
+  const main = document.getElementById('extra-main-' + pageNum);
+  if (!main) return;
+  const sec = document.createElement('div');
+  sec.className = 'main-section deletable';
+  sec.draggable = true;
+  sec.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button>
+    <div class="section-title"><div class="section-icon"></div><span contenteditable="true">標題</span></div>
+    <p class="summary-text" contenteditable="true">在此輸入內容...</p>`;
+  main.appendChild(sec);
+  enableSortable(sec);
+  sec.querySelector('[contenteditable]').focus();
+}
+
+function addExpSectionToPage(pageNum) {
+  const main = document.getElementById('extra-main-' + pageNum);
+  if (!main) return;
+  const sec = document.createElement('div');
+  sec.className = 'main-section deletable';
+  sec.draggable = true;
+  const listId = 'extra-exp-' + pageNum + '-' + Date.now();
+  sec.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button>
+    <div class="section-title"><div class="section-icon"></div><span contenteditable="true">經歷標題</span></div>
+    <div id="${listId}"></div>
+    <button class="add-btn" onclick="addExpItem('${listId}')">新增項目</button>`;
+  main.appendChild(sec);
+  enableSortable(sec);
+  addExpItem(listId);
+}
+
+function addExpItem(listId) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+  const el = document.createElement('div');
+  el.className = 'experience-item deletable';
+  el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="exp-header"><div class="exp-title" contenteditable="true">項目名稱</div><div class="exp-date" contenteditable="true">年份</div></div><div class="exp-desc" contenteditable="true">內容描述...</div>`;
+  list.appendChild(el);
+  enableSortable(el);
+  el.querySelector('.exp-title').focus();
+}
+
+function addImgToPage(input, pageNum) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const area = document.getElementById('extra-img-area-' + pageNum);
+    if (!area) return;
+
+    const container = document.createElement('div');
+    container.className = 'img-container';
+    container.style.textAlign = 'left';
+
+    const wrap = document.createElement('div');
+    wrap.className = 'img-wrap';
+
+    const img = document.createElement('img');
+    img.src = ev.target.result;
+    img.style.width = '100%';
+    img.style.maxWidth = '100%';
+    img.alt = '';
+
+    const handle = document.createElement('div');
+    handle.className = 'img-resize-handle';
+
+    wrap.appendChild(img);
+    wrap.appendChild(handle);
+    container.appendChild(wrap);
+    area.appendChild(container);
+    initImgWrap(wrap);
+    selectImg(wrap);
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function addExperienceToPage(pageNum) {
+  const el = document.createElement('div'); el.className = 'experience-item deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="exp-header"><div class="exp-title" contenteditable="true">職位名稱</div><div class="exp-date" contenteditable="true">年份 — 年份</div></div><div class="exp-desc" contenteditable="true">公司名稱｜工作內容描述...</div>`;
+  const list = document.getElementById('extra-exp-list-' + pageNum);
+  if (list) { list.appendChild(el); enableSortable(el); el.querySelector('.exp-title').focus(); }
+}
+
+/* 面板展開/收合 */
+function togglePanel() {
+  document.getElementById('fp-body').classList.toggle('collapsed');
+}
+
+function debounce(func, wait) {
+  let timeout;
+  return function executedFunction(...args) {
+    const later = () => {
+      clearTimeout(timeout);
+      func(...args);
+    };
+    clearTimeout(timeout);
+    timeout = setTimeout(later, wait);
+  };
+}
+
+function autoPaginate() {
+  const pages = Array.from(document.querySelectorAll('.resume-page'));
+  if (!pages.length) return;
+  const pageHeight = pages[0].clientHeight || pages[0].getBoundingClientRect().height;
+  let hasMoved = false;
+
+  for (let i = 0; i < pages.length; i++) {
+    const page = pages[i];
+    const mainContent = page.querySelector('.main-content');
+    if (!mainContent) continue;
+
+    while (page.scrollHeight > pageHeight + 2) {
+      const lastSection = mainContent.querySelector('.main-section:last-child');
+      if (!lastSection) break;
+
+      let nextPage = pages[i + 1];
+      if (!nextPage) {
+        addPage();
+        pages.push(document.querySelector('.resume-page:last-child'));
+        nextPage = pages[i + 1];
+      }
+
+      const nextMain = nextPage.querySelector('.main-content');
+      const defaultSections = nextMain.querySelectorAll('.main-section');
+      defaultSections.forEach(s => s.remove());
+      nextMain.appendChild(lastSection);
+      hasMoved = true;
+    }
+  }
+
+  if (hasMoved) {
+    document.querySelectorAll('.resume-page').forEach((page, index) => {
+      const label = page.querySelector('.page-label');
+      if (label) label.textContent = `第 ${index + 1} 頁`;
+    });
+  }
+}
+
+const observer = new MutationObserver(debounce(autoPaginate, 500));
+observer.observe(document.body, { childList: true, subtree: true, attributes: true, characterData: true });
+
+/* 圖片插入與大小調整 */
+(function() {
+  const imgBar = document.getElementById('img-bar');
+  const imgSizeVal = document.getElementById('img-size-val');
+  let activeWrap = null, activeImg = null, activeContainer = null;
+
+  function posImgBar(wrap) {
+    imgBar.style.display = 'flex';
+    const rect = wrap.getBoundingClientRect();
+    const bw = imgBar.offsetWidth || 230, bh = imgBar.offsetHeight || 40;
+    let left = rect.left + rect.width / 2 - bw / 2;
+    let top = rect.top - bh - 10;
+    if (left < 10) left = 10;
+    if (left + bw > window.innerWidth - 10) left = window.innerWidth - bw - 10;
+    if (top < 65) top = rect.bottom + 10;
+    imgBar.style.left = left + 'px';
+    imgBar.style.top = top + 'px';
+  }
+
+  function selectImg(wrap) {
+    document.querySelectorAll('.img-wrap.img-selected').forEach(w => w.classList.remove('img-selected'));
+    wrap.classList.add('img-selected');
+    activeWrap = wrap;
+    activeImg = wrap.querySelector('img');
+    activeContainer = wrap.closest('.img-container');
+    imgSizeVal.textContent = Math.round(activeImg.offsetWidth);
+    posImgBar(wrap);
+  }
+
+  function deselect() {
+    imgBar.style.display = 'none';
+    document.querySelectorAll('.img-wrap.img-selected').forEach(w => w.classList.remove('img-selected'));
+    activeWrap = null; activeImg = null; activeContainer = null;
+  }
+
+  document.addEventListener('mousedown', e => {
+    if (imgBar.contains(e.target)) return;
+    const wrap = e.target.closest('.img-wrap');
+    if (wrap && !e.target.classList.contains('img-resize-handle')) {
+      e.preventDefault();
+      selectImg(wrap);
+    } else if (!wrap) {
+      deselect();
+    }
+  });
+
+  window.changeImgWidth = function(delta) {
+    if (!activeImg) return;
+    const newW = Math.max(40, Math.min(520, Math.round(activeImg.offsetWidth) + delta));
+    activeImg.style.width = newW + 'px';
+    imgSizeVal.textContent = newW;
+    posImgBar(activeWrap);
+  };
+
+  window.setImgAlign = function(align) {
+    if (!activeContainer) return;
+    activeContainer.style.textAlign = align;
+    setTimeout(() => posImgBar(activeWrap), 10);
+  };
+
+  window.removeSelectedImg = function() {
+    if (!activeWrap) return;
+    const section = activeWrap.closest('.main-section');
+    const cont = activeWrap.closest('.img-container');
+    if (cont) cont.remove(); else activeWrap.remove();
+    if (section && !section.querySelector('.img-container, [contenteditable]')) section.remove();
+    deselect();
+  };
+
+  window.initImgWrap = function(wrap) {
+    const img = wrap.querySelector('img');
+    const handle = wrap.querySelector('.img-resize-handle');
+    handle.addEventListener('mousedown', e => {
+      e.preventDefault(); e.stopPropagation();
+      const startX = e.clientX, startW = img.offsetWidth;
+      selectImg(wrap);
+      function onMove(e) {
+        const newW = Math.max(40, Math.min(520, Math.round(startW + e.clientX - startX)));
+        img.style.width = newW + 'px';
+        imgSizeVal.textContent = newW;
+        posImgBar(wrap);
+      }
+      function onUp() {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      }
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    });
+  };
+
+  document.getElementById('img-upload').addEventListener('change', e => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      const container = document.createElement('div');
+      container.className = 'img-container';
+      container.style.textAlign = 'left';
+
+      const wrap = document.createElement('div');
+      wrap.className = 'img-wrap';
+
+      const img = document.createElement('img');
+      img.src = ev.target.result;
+      img.style.width = '200px';
+      img.alt = '';
+
+      const handle = document.createElement('div');
+      handle.className = 'img-resize-handle';
+
+      wrap.appendChild(img);
+      wrap.appendChild(handle);
+      container.appendChild(wrap);
+
+      let imgSection = document.getElementById('img-section');
+      if (!imgSection) {
+        imgSection = document.createElement('div');
+        imgSection.className = 'main-section';
+        imgSection.id = 'img-section';
+        imgSection.innerHTML = '<div class="section-title"><div class="section-icon"></div><span contenteditable="true">圖片</span></div>';
+        document.querySelector('.main-content').appendChild(imgSection);
+      }
+      imgSection.appendChild(container);
+      initImgWrap(wrap);
+      selectImg(wrap);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = '';
+  });
+})();
+
+/* ===== 儲存草稿 / 自動載入 ===== */
+function showToast(msg) {
+  const t = document.getElementById('save-toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => { t.classList.remove('show'); t.textContent = '✓ 匯出成功'; }, 2000);
+}
+
+function saveResume() {
+  try {
+    const data = {
+      v: 1,
+      theme: (document.querySelector('.theme-pill.active') || {}).dataset?.theme || 'green',
+      avatarBg: avatarDisplay.style.backgroundImage || '',
+      avatarBgX, avatarBgY, avatarZoom,
+      avatarW: avatarDisplay.style.width || '',
+      name: (document.querySelector('.name-block h1') || {}).innerHTML || '',
+      titleTag: (document.querySelector('.name-block .title-tag') || {}).innerHTML || '',
+      contacts: (document.getElementById('contact-row') || {}).innerHTML || '',
+      sidebar: (document.querySelector('.sidebar') || {}).innerHTML || '',
+      mainContent: (document.querySelector('.main-content') || {}).innerHTML || '',
+    };
+    localStorage.setItem('bamboo_resume_v1', JSON.stringify(data));
+    showToast('✓ 已儲存草稿');
+  } catch(e) {
+    alert('儲存失敗（儲存空間不足？）\n' + e.message);
+  }
+}
+
+function loadResume() {
+  let d;
+  try { d = JSON.parse(localStorage.getItem('bamboo_resume_v1') || 'null'); } catch(e) { return; }
+  if (!d || d.v !== 1) return;
+
+  // 頭像
+  if (d.avatarBg) {
+    avatarDisplay.style.backgroundImage = d.avatarBg;
+    avatarDisplay.style.cursor = 'grab';
+    const at = document.getElementById('avatar-text');
+    if (at) at.textContent = '';
+  }
+  if (d.avatarW) {
+    const s = parseInt(d.avatarW);
+    if (!isNaN(s)) {
+      avatarDisplay.style.width = s + 'px';
+      avatarDisplay.style.height = s + 'px';
+      avatarDisplay.style.fontSize = Math.round(s * 0.34) + 'px';
+    }
+  }
+  avatarBgX = d.avatarBgX ?? 50;
+  avatarBgY = d.avatarBgY ?? 50;
+  avatarZoom = d.avatarZoom ?? 100;
+  avatarDisplay.style.backgroundPosition = `${avatarBgX}% ${avatarBgY}%`;
+  avatarDisplay.style.backgroundSize = avatarZoom + '%';
+
+  // 文字與聯絡資訊（不替換 avatarDisplay 元素，保留事件綁定）
+  const q = (s) => document.querySelector(s);
+  const qi = (id) => document.getElementById(id);
+  if (d.name && q('.name-block h1')) q('.name-block h1').innerHTML = d.name;
+  if (d.titleTag && q('.name-block .title-tag')) q('.name-block .title-tag').innerHTML = d.titleTag;
+  if (d.contacts && qi('contact-row')) qi('contact-row').innerHTML = d.contacts;
+
+  // 側欄與主要內容
+  if (d.sidebar && q('.sidebar')) q('.sidebar').innerHTML = d.sidebar;
+  if (d.mainContent && q('.main-content')) q('.main-content').innerHTML = d.mainContent;
+
+  // 重啟拖曳排序與圖片調整
+  document.querySelectorAll('.deletable').forEach(enableSortable);
+  document.querySelectorAll('.img-wrap').forEach(initImgWrap);
+
+  // 套用主題
+  if (d.theme) {
+    const pill = document.querySelector(`.theme-pill[data-theme="${d.theme}"]`);
+    if (pill) pill.click();
+  }
+}
+
+/* ── 模板切換 ── */
+let activeTemplate = 'bamboo';
+
+function switchTemplate(name) {
+  activeTemplate = name;
+  document.querySelectorAll('.tpl-thumb').forEach(t => t.classList.toggle('active', t.dataset.tpl === name));
+  document.getElementById('resume').style.display      = name === 'bamboo' ? '' : 'none';
+  document.getElementById('resume-warm').style.display = name === 'warm'   ? '' : 'none';
+  document.getElementById('fp-toggle').style.background = name === 'warm' ? '#7a6a52' : activeTheme.dark;
+}
+
+/* ── 暖調模板新增功能 ── */
+function addWContact() {
+  const el = document.createElement('div'); el.className = 'w-contact deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-contact-icon">◉</span><span contenteditable="true">新聯絡資訊</span>`;
+  document.getElementById('w-contact-list').appendChild(el); enableSortable(el); el.querySelector('span:last-child').focus();
+}
+function addWSkill() {
+  const el = document.createElement('span'); el.className = 'w-tag deletable'; el.draggable = true; el.contentEditable = 'true';
+  el.innerHTML = `<button class="del-btn" style="right:-6px;top:-6px;" onclick="this.parentElement.remove()">×</button>新技能`;
+  document.getElementById('w-skills-list').appendChild(el); enableSortable(el); el.focus();
+}
+function addWLanguage() {
+  const el = document.createElement('div'); el.className = 'w-lang deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-lang-name" contenteditable="true">語言</span><span class="w-lang-level" contenteditable="true">程度</span>`;
+  document.getElementById('w-lang-list').appendChild(el); enableSortable(el); el.querySelector('.w-lang-name').focus();
+}
+function addWEdu() {
+  const el = document.createElement('div'); el.className = 'w-edu deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><span class="w-edu-school" contenteditable="true">學校名稱</span><span class="w-edu-degree" contenteditable="true">科系名稱</span><span class="w-edu-year" contenteditable="true">年份 – 年份</span>`;
+  document.getElementById('w-edu-list').appendChild(el); enableSortable(el); el.querySelector('.w-edu-school').focus();
+}
+function addWExp() {
+  const el = document.createElement('div'); el.className = 'w-exp deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="w-exp-header"><div><div class="w-exp-title" contenteditable="true">職位名稱</div><div class="w-exp-company" contenteditable="true">公司名稱，城市</div></div><div class="w-exp-date" contenteditable="true">年份 – 年份</div></div><div class="w-exp-desc" contenteditable="true">工作內容描述...</div>`;
+  document.getElementById('w-exp-list').appendChild(el); enableSortable(el); el.querySelector('.w-exp-title').focus();
+}
+function addWProj() {
+  const el = document.createElement('div'); el.className = 'w-proj deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="w-proj-header"><div class="w-proj-title" contenteditable="true">作品名稱</div><div class="w-proj-date" contenteditable="true">年份</div></div><div class="w-proj-desc" contenteditable="true">作品描述...</div>`;
+  document.getElementById('w-proj-list').appendChild(el); enableSortable(el); el.querySelector('.w-proj-title').focus();
+}
+function addWCert() {
+  const el = document.createElement('div'); el.className = 'w-cert deletable'; el.draggable = true;
+  el.innerHTML = `<button class="del-btn" onclick="this.parentElement.remove()">×</button><div class="w-cert-header"><div class="w-cert-title" contenteditable="true">證照名稱</div><div class="w-cert-date" contenteditable="true">年份</div></div><div class="w-cert-desc" contenteditable="true">說明...</div>`;
+  document.getElementById('w-cert-list').appendChild(el); enableSortable(el); el.querySelector('.w-cert-title').focus();
+}
+
+/* ── 暖調模板頭像 ── */
+(function() {
+  const wAvatar = document.getElementById('w-avatar-display');
+  const wUpload = document.getElementById('avatar-upload-warm');
+  if (!wAvatar || !wUpload) return;
+  let wDragMoved = false, wBgX = 50, wBgY = 50;
+  wAvatar.addEventListener('click', () => { if (!wDragMoved) wUpload.click(); });
+  wAvatar.addEventListener('mousedown', e => {
+    if (!wAvatar.style.backgroundImage) return;
+    e.preventDefault(); wDragMoved = false;
+    const sx = e.clientX, sy = e.clientY, sbx = wBgX, sby = wBgY;
+    wAvatar.style.cursor = 'grabbing';
+    function onMove(e) {
+      const sz = wAvatar.offsetWidth;
+      if (Math.abs(e.clientX-sx)>3||Math.abs(e.clientY-sy)>3) wDragMoved=true;
+      wBgX = Math.max(0,Math.min(100,sbx-(e.clientX-sx)/sz*100));
+      wBgY = Math.max(0,Math.min(100,sby-(e.clientY-sy)/sz*100));
+      wAvatar.style.backgroundPosition=`${wBgX}% ${wBgY}%`;
+    }
+    function onUp() { wAvatar.style.cursor='grab'; document.removeEventListener('mousemove',onMove); document.removeEventListener('mouseup',onUp); }
+    document.addEventListener('mousemove',onMove); document.addEventListener('mouseup',onUp);
+  });
+  wUpload.addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => {
+      wAvatar.style.backgroundImage = `url('${ev.target.result}')`;
+      wAvatar.style.backgroundPosition = '50% 50%'; wBgX=50; wBgY=50;
+      wAvatar.style.cursor = 'grab';
+      document.getElementById('w-avatar-text').textContent = '';
+    };
+    reader.readAsDataURL(file);
+  });
+})();
+
+/* ── 暖調匯出 CSS ── */
+const WARM_EXPORT_CSS = `
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #f0e8d8; display: flex; justify-content: center; padding: 40px 20px; min-height: 100vh; font-family: 'Noto Sans TC', sans-serif; }
+.tpl-warm { background: #faf7f2; width: 794px; min-height: 1122px; border: 1px solid #d8cdb8; box-shadow: 0 8px 40px rgba(0,0,0,0.1); }
+.w-body { display: grid; grid-template-columns: 230px 1fr; min-height: 1122px; }
+.w-sidebar { background: #f0e8d8; padding: 36px 24px; border-right: 1px solid #d8cdb8; }
+.w-main { background: #faf7f2; padding: 36px 40px; }
+.w-hero { text-align: center; padding-bottom: 24px; margin-bottom: 22px; border-bottom: 1px solid #d8cdb8; }
+.w-avatar { width: 80px; height: 80px; border-radius: 50%; border: 2.5px solid #c4a882; background: rgba(196,168,130,0.18); background-size: cover; background-position: center; display: flex; align-items: center; justify-content: center; font-family: 'Noto Serif TC', serif; font-size: 26px; font-weight: 700; color: #7a6a52; margin: 0 auto 12px; }
+.w-name { font-family: 'Noto Serif TC', serif; font-size: 20px; font-weight: 700; letter-spacing: 3px; color: #1a1714; margin-bottom: 5px; line-height: 1.2; }
+.w-title-tag { font-size: 11px; letter-spacing: 2px; color: #7a6a52; }
+.w-section { margin-bottom: 20px; }
+.w-section-title { font-family: 'Noto Serif TC', serif; font-size: 10px; letter-spacing: 2.5px; color: #7a6a52; text-transform: uppercase; font-weight: 500; margin-bottom: 10px; padding-bottom: 6px; border-bottom: 1.5px solid #c4a882; }
+.w-contact { display: flex; align-items: flex-start; gap: 7px; font-size: 11px; color: #5a5550; margin-bottom: 6px; line-height: 1.5; }
+.w-contact-icon { color: #9a8870; font-size: 12px; flex-shrink: 0; margin-top: 1px; }
+.w-tag-list { display: flex; flex-wrap: wrap; gap: 5px; }
+.w-tag { font-size: 10px; padding: 3px 9px; background: #ede8df; color: #5a5550; border-radius: 20px; border: 1px solid #d8cdb8; letter-spacing: 0.3px; }
+.w-lang { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 11px; }
+.w-lang-name { color: #3a3330; letter-spacing: 0.5px; }
+.w-lang-level { font-size: 10px; color: #9a8870; }
+.w-edu { margin-bottom: 12px; }
+.w-edu-school { font-family: 'Noto Serif TC', serif; font-size: 12px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; display: block; }
+.w-edu-degree { font-size: 11px; color: #5a5550; margin-top: 2px; display: block; }
+.w-edu-year { font-size: 10px; color: #9a8870; margin-top: 2px; display: block; }
+.w-main-section { margin-bottom: 24px; }
+.w-main-title { font-family: 'Noto Serif TC', serif; font-size: 10px; letter-spacing: 2.5px; text-transform: uppercase; color: #7a6a52; font-weight: 500; margin-bottom: 12px; padding-bottom: 6px; border-bottom: 1.5px solid #c4a882; }
+.w-summary { font-size: 12px; color: #3a3330; line-height: 1.85; letter-spacing: 0.5px; border-left: 3px solid #c4a882; padding-left: 14px; }
+.w-exp { margin-bottom: 16px; padding-left: 14px; border-left: 2px solid #d8cdb8; position: relative; }
+.w-exp::before { content: ''; position: absolute; left: -5px; top: 5px; width: 8px; height: 8px; background: #c4a882; border-radius: 50%; border: 2px solid #faf7f2; }
+.w-exp-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.w-exp-title { font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; }
+.w-exp-company { font-size: 11px; color: #7a6a52; margin-top: 2px; }
+.w-exp-date { font-size: 10px; color: #9a8870; white-space: nowrap; margin-left: 10px; margin-top: 3px; }
+.w-exp-desc { font-size: 11px; color: #5a5550; line-height: 1.8; letter-spacing: 0.3px; margin-top: 5px; }
+.w-proj { margin-bottom: 14px; }
+.w-proj-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.w-proj-title { font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; }
+.w-proj-date { font-size: 10px; color: #c4a882; font-weight: 500; white-space: nowrap; margin-left: 10px; margin-top: 3px; }
+.w-proj-desc { font-size: 11px; color: #5a5550; line-height: 1.8; letter-spacing: 0.3px; }
+.w-cert { margin-bottom: 12px; }
+.w-cert-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+.w-cert-title { font-family: 'Noto Serif TC', serif; font-size: 13px; font-weight: 500; color: #1a1714; letter-spacing: 0.5px; }
+.w-cert-date { font-size: 10px; color: #c4a882; font-weight: 500; white-space: nowrap; margin-left: 10px; margin-top: 3px; }
+.w-cert-desc { font-size: 11px; color: #5a5550; line-height: 1.8; letter-spacing: 0.3px; }
+`;
+
+function exportWarmHTML() {
+  const clone = document.getElementById('resume-warm').cloneNode(true);
+  clone.querySelectorAll('.add-btn,.del-btn,input[type="file"]').forEach(el => el.remove());
+  clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+  clone.querySelectorAll('.deletable').forEach(el => { el.classList.remove('deletable'); el.removeAttribute('draggable'); });
+  clone.style.display = '';
+  const html = `<!DOCTYPE html>\n<html lang="zh-TW">\n<head>\n<meta charset="UTF-8">\n<meta name="viewport" content="width=device-width, initial-scale=1.0">\n<title>履歷</title>\n<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">\n<style>${WARM_EXPORT_CSS}</style>\n</head>\n<body>\n${clone.outerHTML}\n</body>\n</html>`;
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'warm_resume.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(a.href);
+  showToast('✓ 匯出成功');
+}
+
+async function exportWarmPDF() {
+  const clone = document.getElementById('resume-warm').cloneNode(true);
+  clone.querySelectorAll('.add-btn,.del-btn,input[type="file"]').forEach(el => el.remove());
+  clone.querySelectorAll('[contenteditable]').forEach(el => el.removeAttribute('contenteditable'));
+  clone.querySelectorAll('.deletable').forEach(el => { el.classList.remove('deletable'); el.removeAttribute('draggable'); });
+  clone.style.cssText = '';
+  const printCSS = WARM_EXPORT_CSS + `
+* { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+html, body { margin: 0; padding: 0; background: #fff; display: block; }
+.tpl-warm { width: 210mm; min-height: 297mm; height: 297mm; overflow: hidden; border: none; box-shadow: none; }
+.w-exp::before { border-color: #faf7f2 !important; }
+@page { margin: 0; size: A4 portrait; }`;
+  const printHTML = `<!DOCTYPE html>\n<html lang="zh-TW">\n<head>\n<meta charset="UTF-8">\n<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@300;400;500;700&family=Noto+Sans+TC:wght@300;400;500&display=swap" rel="stylesheet">\n<style>${printCSS}</style>\n</head>\n<body>${clone.outerHTML}\n<script>window.onload=function(){setTimeout(function(){window.print();window.close();},400);};<\/script>\n</body>\n</html>`;
+  const pw = window.open('','_blank','width=900,height=700');
+  pw.document.write(printHTML); pw.document.close();
+}
+
+loadResume();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh --version)",
+      "Bash(aws --version)",
+      "Bash(pnpm --version)",
+      "Bash(command -v gh)",
+      "Bash(command -v aws)",
+      "Bash(command -v pnpm)",
+      "Bash(command -v node)",
+      "Bash(command -v npm)",
+      "Bash(uname -a && cat /etc/os-release 2>/dev/null | head -5 && which apt apt-get snap curl wget 2>/dev/null)",
+      "Read(//usr/lib/**)"
+    ]
+  }
+}

@@ -1,0 +1,76 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import WorkCard from '@components/WorkCard.astro';
+import { getCollection } from 'astro:content';
+
+const allWorks = await getCollection('works', ({ data }) => data.status !== 'draft');
+const allChapters = await getCollection('chapters');
+
+const chapterCountByWork = allChapters.reduce<Record<string, number>>((acc, ch) => {
+  acc[ch.data.work] = (acc[ch.data.work] ?? 0) + 1;
+  return acc;
+}, {});
+
+const works = allWorks.sort((a, b) =>
+  b.data.publishedAt.getTime() - a.data.publishedAt.getTime()
+);
+
+const featured = works.filter(w => w.data.featured);
+---
+
+<BaseLayout title="小書樓">
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <div class="container">
+    <header class="page-header">
+      <h1 class="page-header__title">小書樓</h1>
+      <p class="page-header__desc">勒索沃德的創作基地</p>
+    </header>
+
+    {works.length === 0
+      ? (
+        <div class="empty-state">
+          <div class="empty-state__icon">📚</div>
+          <p class="empty-state__text">作品即將到來，敬請期待</p>
+        </div>
+      )
+      : (
+        <>
+          {featured.length > 0 && (
+            <section>
+              <h2 class="section-title">精選作品</h2>
+              <div class="works-grid">
+                {featured.map(work => (
+                  <WorkCard work={work} chapterCount={chapterCountByWork[work.slug] ?? 0} />
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section>
+            <h2 class="section-title">{featured.length > 0 ? '全部作品' : '作品列表'}</h2>
+            <div class="works-grid">
+              {works.map(work => (
+                <WorkCard work={work} chapterCount={chapterCountByWork[work.slug] ?? 0} />
+              ))}
+            </div>
+          </section>
+        </>
+      )
+    }
+  </div>
+</BaseLayout>
+
+<style>
+  .section-title {
+    font-size: var(--text-xl);
+    font-weight: 700;
+    margin-bottom: var(--space-4);
+    padding-bottom: var(--space-2);
+    border-bottom: 2px solid var(--color-accent);
+    display: inline-block;
+  }
+</style>
