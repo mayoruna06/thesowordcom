@@ -82,6 +82,8 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
 <script>
   import { ADMIN_URL } from '../../site.config';
   const base = import.meta.env.BASE_URL;
+  const requestedNext = new URLSearchParams(location.search).get('next');
+  const nextPath = requestedNext?.startsWith(base) ? requestedNext : null;
   const $ = (id: string) => document.getElementById(id)!;
 
   async function api(path: string, body?: unknown) {
@@ -189,7 +191,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
   $('btn-login').onclick = async () => {
     try {
       await api('/login', { email: ($('li-email') as HTMLInputElement).value, password: ($('li-password') as HTMLInputElement).value });
-      location.reload();
+      location.href = nextPath || location.href;
     } catch (e: any) { msg(e.message); }
   };
   $('btn-register').onclick = async () => {

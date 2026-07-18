@@ -175,6 +175,12 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
     .reading-bar { padding: 0 16px; }
     .breadcrumb { display: none; }
     .sep { display: none; }
+    .reading-controls { gap: 4px; }
+    #bookmark-chapter { padding-inline: 8px; }
+  }
+  @media (max-width: 480px) {
+    #bookmark-chapter { font-size: 0; width: 34px; padding-inline: 5px; }
+    #bookmark-chapter::before { content: '🔖'; font-size: 13px; }
   }
 </style>
 
@@ -189,8 +195,23 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
     body: JSON.stringify({ work_slug: workSlug, chapter_slug: chapterSlug }),
   }).catch(() => {});
 
-  // 收藏本章：登入後將作品加入收藏，並把入口定位在目前章節
+  // 收藏本章：顯示既有狀態；登入後可把書籤更新到目前章節
   const bookmarkChapter = document.getElementById('bookmark-chapter');
+  const renderChapterBookmark = (savedChapter) => {
+    if (!bookmarkChapter) return;
+    const isCurrent = savedChapter === chapterSlug;
+    bookmarkChapter.textContent = isCurrent ? '✓ 已收藏本章' : '🔖 更新書籤到本章';
+    bookmarkChapter.classList.toggle('is-bookmarked', Boolean(savedChapter));
+  };
+
+  fetch(`${adminUrl}/api/reader/bookmarks`, { credentials: 'include' })
+    .then(r => r.ok ? r.json() : [])
+    .then(rows => {
+      const hit = rows.find(b => b.work_slug === workSlug);
+      if (hit) renderChapterBookmark(hit.chapter_slug || 'saved');
+    })
+    .catch(() => {});
+
   bookmarkChapter?.addEventListener('click', async () => {
     bookmarkChapter.setAttribute('disabled', '');
     const r = await fetch(`${adminUrl}/api/reader/bookmarks`, {
@@ -199,18 +220,14 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
       body: JSON.stringify({ work_slug: workSlug, chapter_slug: chapterSlug }),
     }).catch(() => null);
     if (r?.status === 401) {
-      location.href = `${baseUrl}account/`;
+      const next = encodeURIComponent(location.pathname + location.search + location.hash);
+      location.href = `${baseUrl}account/?next=${next}`;
       return;
     }
-    if (r?.ok) {
-      bookmarkChapter.textContent = '✓ 已收藏本章';
-      bookmarkChapter.classList.add('is-bookmarked');
-    } else {
-      bookmarkChapter.textContent = '稍後再試';
-    }
+    if (r?.ok) renderChapterBookmark(chapterSlug);
+    else bookmarkChapter.textContent = '稍後再試';
     bookmarkChapter.removeAttribute('disabled');
   });
-
   // 字體大小控制
   let size = 0;
   document.getElementById('font-sm')?.addEventListener('click', () => {

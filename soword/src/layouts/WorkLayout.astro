@@ -375,7 +375,8 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
           body: JSON.stringify({ work_slug: workSlug }),
         }).catch(() => null);
         if (r?.status === 401) {
-          location.href = `${import.meta.env.BASE_URL}account/`;
+          const next = encodeURIComponent(location.pathname + location.search + location.hash);
+          location.href = `${import.meta.env.BASE_URL}account/?next=${next}`;
           return;
         }
         if (r?.ok) { bookmarked = !bookmarked; renderBookmark(); }
