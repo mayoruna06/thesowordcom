@@ -98,6 +98,7 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
             {firstChapter && (
               <button class="btn-read-cont" id="btn-continue" data-work={work.slug}>繼續閱讀</button>
             )}
+            <button class="btn-read-cont" id="btn-bookmark" data-work={work.slug}>☆ 收藏</button>
           </div>
         </div>
       </div>
@@ -290,6 +291,7 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
     transition: border-color var(--transition);
   }
   .btn-read-cont:hover { border-color: var(--accent); }
+  .btn-read-cont.is-bookmarked { border-color: var(--accent); color: var(--accent); }
 
   /* ── Tabs ── */
   .detail-tabs {
@@ -347,6 +349,40 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
       });
     });
   });
+
+  // 作品收藏：未登入時引導到會員中心
+  const bookmarkBtn = document.getElementById('btn-bookmark') as HTMLButtonElement | null;
+  if (bookmarkBtn) {
+    const workSlug = bookmarkBtn.dataset.work!;
+    let bookmarked = false;
+    const renderBookmark = () => {
+      bookmarkBtn.textContent = bookmarked ? '★ 已收藏' : '☆ 收藏';
+      bookmarkBtn.classList.toggle('is-bookmarked', bookmarked);
+    };
+    import('../site.config').then(async ({ ADMIN_URL }) => {
+      const list = await fetch(`${ADMIN_URL}/api/reader/bookmarks`, { credentials: 'include' });
+      if (list.ok) {
+        const rows = await list.json();
+        bookmarked = rows.some((b: any) => b.work_slug === workSlug);
+        renderBookmark();
+      }
+      bookmarkBtn.onclick = async () => {
+        bookmarkBtn.disabled = true;
+        const path = bookmarked ? '/bookmarks/remove' : '/bookmarks';
+        const r = await fetch(`${ADMIN_URL}/api/reader${path}`, {
+          method: 'POST', credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ work_slug: workSlug }),
+        }).catch(() => null);
+        if (r?.status === 401) {
+          location.href = `${import.meta.env.BASE_URL}account/`;
+          return;
+        }
+        if (r?.ok) { bookmarked = !bookmarked; renderBookmark(); }
+        bookmarkBtn.disabled = false;
+      };
+    }).catch(() => {});
+  }
 
   // 繼續閱讀：登入讀者以雲端進度為準，未登入用 localStorage
   const continueBtn = document.getElementById('btn-continue') as HTMLButtonElement | null;

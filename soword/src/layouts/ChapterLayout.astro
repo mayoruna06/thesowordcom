@@ -40,6 +40,7 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
       </div>
     </div>
     <div class="reading-controls">
+      <button class="ctrl-btn" id="bookmark-chapter" title="收藏並記住目前章節">🔖 書籤本章</button>
       <button class="ctrl-btn" id="font-sm" title="縮小字體">A−</button>
       <button class="ctrl-btn" id="font-lg" title="放大字體">A+</button>
     </div>
@@ -137,6 +138,7 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
     transition: border-color var(--transition), color var(--transition);
   }
   .ctrl-btn:hover { border-color: var(--accent); color: var(--ink); }
+  .ctrl-btn.is-bookmarked { border-color: var(--accent); color: var(--accent); }
 
   /* ── Chapter Nav ── */
   .chapter-nav-bar {
@@ -176,7 +178,7 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
   }
 </style>
 
-<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug, adminUrl: ADMIN_URL }}>
+<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug, adminUrl: ADMIN_URL, baseUrl: base }}>
   // 記憶閱讀進度
   localStorage.setItem(`last-chapter-${workSlug}`, chapterSlug);
 
@@ -186,6 +188,28 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ work_slug: workSlug, chapter_slug: chapterSlug }),
   }).catch(() => {});
+
+  // 收藏本章：登入後將作品加入收藏，並把入口定位在目前章節
+  const bookmarkChapter = document.getElementById('bookmark-chapter');
+  bookmarkChapter?.addEventListener('click', async () => {
+    (bookmarkChapter as HTMLButtonElement).disabled = true;
+    const r = await fetch(`${adminUrl}/api/reader/bookmarks`, {
+      method: 'POST', credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ work_slug: workSlug, chapter_slug: chapterSlug }),
+    }).catch(() => null);
+    if (r?.status === 401) {
+      location.href = `${baseUrl}account/`;
+      return;
+    }
+    if (r?.ok) {
+      bookmarkChapter.textContent = '✓ 已收藏本章';
+      bookmarkChapter.classList.add('is-bookmarked');
+    } else {
+      bookmarkChapter.textContent = '稍後再試';
+    }
+    (bookmarkChapter as HTMLButtonElement).disabled = false;
+  });
 
   // 字體大小控制
   let size = 0;

@@ -67,6 +67,10 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
         <h3>我的書架（讀到哪，接著讀）</h3>
         <div id="shelf"><p class="muted">載入中…</p></div>
       </div>
+      <div class="card">
+        <h3>我的收藏</h3>
+        <div id="bookmarks"><p class="muted">載入中…</p></div>
+      </div>
     </div>
   </div>
 </BaseLayout>
@@ -123,6 +127,30 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
       : '<p class="muted">還沒有閱讀紀錄。去<a href="' + base + '">首頁</a>挑一本開始吧！</p>';
   }
 
+  async function loadBookmarks() {
+    const { workTitles, chapterTitles } = (window as any).__titles;
+    const rows = await api('/bookmarks');
+    $('bookmarks').innerHTML = rows.length
+      ? rows.map((b: any) => {
+          const href = b.chapter_slug
+            ? `${base}works/${b.work_slug}/${b.chapter_slug}/`
+            : `${base}works/${b.work_slug}/`;
+          const detail = b.chapter_slug ? (chapterTitles[b.chapter_slug] || b.chapter_slug) : '前往作品';
+          return `<div class="bookmark-item">
+            <a href="${href}"><span class="w">${workTitles[b.work_slug] || b.work_slug}</span><span class="c">${detail} →</span></a>
+            <button class="bookmark-remove" data-work="${b.work_slug}" aria-label="移除收藏">移除</button>
+          </div>`;
+        }).join('')
+      : '<p class="muted">還沒有收藏。到作品頁按「收藏」加入吧！</p>';
+    document.querySelectorAll<HTMLButtonElement>('.bookmark-remove').forEach(btn => {
+      btn.onclick = async () => {
+        btn.disabled = true;
+        try { await api('/bookmarks/remove', { work_slug: btn.dataset.work }); await loadBookmarks(); }
+        catch (e: any) { msg(e.message); btn.disabled = false; }
+      };
+    });
+  }
+
   async function boot() {
     ($('lnk-admin') as HTMLAnchorElement).href = ADMIN_URL;
     const params = new URLSearchParams(location.search);
@@ -149,7 +177,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
       $('me-name').textContent = me.display_name;
       $('me-email').textContent = me.email;
       show('member');
-      await loadShelf();
+      await Promise.all([loadShelf(), loadBookmarks()]);
     } catch { show('guest'); }
   }
 
@@ -205,4 +233,10 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
   .shelf-item { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); }
   .shelf-item:last-child { border-bottom: none; }
   .shelf-item .c { color: var(--ink2); font-size: 13px; }
+  .bookmark-item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); }
+  .bookmark-item:last-child { border-bottom: none; }
+  .bookmark-item a { display: flex; justify-content: space-between; gap: 12px; padding: 10px 4px; text-decoration: none; color: var(--ink); min-width: 0; }
+  .bookmark-item .c { color: var(--ink2); font-size: 13px; white-space: nowrap; }
+  .bookmark-remove { border: 0; background: none; color: var(--ink3); cursor: pointer; font: inherit; font-size: 12px; padding: 6px; }
+  .bookmark-remove:hover { color: #b3402f; }
 </style>
