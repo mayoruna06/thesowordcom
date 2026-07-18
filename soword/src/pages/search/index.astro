@@ -1,0 +1,103 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+---
+
+<BaseLayout title="搜尋 — 小書樓" description="搜尋小書樓的作品與章節內文">
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <main class="search-page">
+    <header class="search-heading">
+      <p class="eyebrow">SEARCH</p>
+      <h1>站內搜尋</h1>
+      <p id="search-summary" class="summary">輸入關鍵字搜尋作品、章節與內文。</p>
+    </header>
+    <div id="search-results" class="results" aria-live="polite"></div>
+    <noscript><p class="state">請開啟 JavaScript 後使用搜尋功能。</p></noscript>
+  </main>
+</BaseLayout>
+
+<script>
+  import { ADMIN_URL } from '../../site.config';
+  const base = import.meta.env.BASE_URL;
+  const params = new URLSearchParams(location.search);
+  const q = (params.get('q') || '').trim().slice(0, 50);
+  const summary = document.getElementById('search-summary')!;
+  const results = document.getElementById('search-results')!;
+  const headerInput = document.querySelector<HTMLInputElement>('.search-wrap input[name="q"]');
+  if (headerInput) headerInput.value = q;
+
+  function showState(text: string, error = false) {
+    const p = document.createElement('p');
+    p.className = `state${error ? ' error' : ''}`;
+    p.textContent = text;
+    results.replaceChildren(p);
+  }
+
+  function resultCard(item: any) {
+    const link = document.createElement('a');
+    link.className = 'result-card';
+    link.href = item.kind === 'works'
+      ? `${base}works/${item.slug}/`
+      : `${base}works/${item.work_slug}/${item.slug}/`;
+
+    const meta = document.createElement('span');
+    meta.className = 'result-kind';
+    meta.textContent = item.kind === 'works' ? '作品' : '章節';
+
+    const title = document.createElement('h2');
+    title.textContent = item.title || item.slug;
+
+    const snippet = document.createElement('p');
+    snippet.textContent = item.snippet || '前往閱讀';
+
+    const arrow = document.createElement('span');
+    arrow.className = 'result-arrow';
+    arrow.textContent = '前往閱讀 →';
+
+    link.append(meta, title, snippet, arrow);
+    return link;
+  }
+
+  async function search() {
+    if (!q) { showState('請在上方搜尋框輸入關鍵字。'); return; }
+    summary.textContent = `正在搜尋「${q}」…`;
+    showState('搜尋中…');
+    try {
+      const r = await fetch(`${ADMIN_URL}/api/reader/search?q=${encodeURIComponent(q)}`);
+      const rows = await r.json().catch(() => []);
+      if (!r.ok) throw new Error(rows.error || '搜尋暫時無法使用');
+      summary.textContent = `「${q}」找到 ${rows.length} 筆結果`;
+      if (!rows.length) { showState('找不到符合的作品或章節，換個關鍵字試試看。'); return; }
+      results.replaceChildren(...rows.map(resultCard));
+    } catch (e: any) {
+      summary.textContent = `搜尋「${q}」時發生問題`;
+      showState(e.message || '搜尋暫時無法使用，請稍後再試。', true);
+    }
+  }
+
+  search();
+</script>
+
+<style>
+  .search-page { max-width: 760px; margin: 0 auto; padding: 56px 20px 88px; }
+  .search-heading { margin-bottom: 28px; }
+  .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 11px; letter-spacing: 0.2em; }
+  h1 { margin: 0; font-family: var(--font-serif); font-size: 30px; font-weight: 500; letter-spacing: 0.1em; }
+  .summary { color: var(--ink3); font-size: 14px; margin: 12px 0 0; }
+  .results { display: grid; gap: 12px; }
+  .result-card { position: relative; display: block; padding: 20px 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); text-decoration: none; transition: border-color var(--transition), transform 0.15s; }
+  .result-card:hover { border-color: var(--accent); transform: translateY(-1px); text-decoration: none; color: var(--ink); }
+  .result-kind { display: inline-block; margin-bottom: 8px; color: var(--accent); font-size: 11px; letter-spacing: 0.12em; }
+  .result-card h2 { margin: 0 0 8px; font-family: var(--font-serif); font-size: 18px; font-weight: 500; }
+  .result-card p { margin: 0; color: var(--ink2); font-size: 13px; line-height: 1.7; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .result-arrow { display: block; margin-top: 12px; color: var(--ink3); font-size: 12px; text-align: right; }
+  .state { padding: 32px 20px; border: 1px dashed var(--line); border-radius: 8px; color: var(--ink3); text-align: center; }
+  .state.error { color: #b3402f; background: #fbeae7; border-style: solid; }
+  @media (max-width: 600px) {
+    .search-page { padding-top: 36px; }
+    .result-card { padding: 16px; }
+  }
+</style>
