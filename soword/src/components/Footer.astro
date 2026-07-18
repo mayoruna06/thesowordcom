@@ -1,15 +1,10 @@
 ---
-const base = import.meta.env.BASE_URL;
 const year = new Date().getFullYear();
 ---
 
 <footer class="site-footer">
   <div class="container footer-inner">
     <span class="footer-copy">© {year} 勒索沃德 · 小書樓</span>
-    <nav class="footer-links">
-      <a href={`${base}rss.xml`}>RSS</a>
-      <a href="https://github.com/mayoruna06" target="_blank" rel="noopener">GitHub</a>
-    </nav>
   </div>
 </footer>
 
@@ -22,12 +17,9 @@ const year = new Date().getFullYear();
   .footer-inner {
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     flex-wrap: wrap;
     gap: 12px;
   }
   .footer-copy { font-size: 12px; color: var(--ink3); letter-spacing: 0.06em; }
-  .footer-links { display: flex; gap: 20px; }
-  .footer-links a { font-size: 12px; color: var(--ink3); letter-spacing: 0.06em; transition: color var(--transition); }
-  .footer-links a:hover { color: var(--ink2); }
 </style>
