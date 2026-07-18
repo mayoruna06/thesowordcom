@@ -2,7 +2,7 @@
 const base = import.meta.env.BASE_URL;
 const currentPath = Astro.url.pathname;
 const isHome  = currentPath === base;
-const isWorks = currentPath.startsWith(`${base}works/`);
+const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
 ---
 
 <header class="site-header">
@@ -12,6 +12,7 @@ const isWorks = currentPath.startsWith(`${base}works/`);
   </a>
   <nav>
     <a href={base} class:list={{ active: isHome }}>首頁</a>
+    <a href={`${base}announcements/`} class:list={{ active: isAnnouncements }}>公告</a>
     <a href={`${base}account/`}>登入</a>
   </nav>
   <form class="search-wrap" role="search" action={`${base}search/`} method="get">

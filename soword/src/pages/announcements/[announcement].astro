@@ -1,0 +1,54 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { getCollection, render } from 'astro:content';
+
+export async function getStaticPaths() {
+  const announcements = await getCollection('announcements');
+  return announcements.map(announcement => ({
+    params: { announcement: announcement.slug },
+    props: { announcement },
+  }));
+}
+
+const { announcement } = Astro.props;
+const { Content } = await render(announcement);
+const base = import.meta.env.BASE_URL;
+const dateStr = announcement.data.publishedAt.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout title={announcement.data.title} description={`小書樓公告：${announcement.data.title}`}>
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <article class="announcement-detail">
+    <a class="back" href={`${base}announcements/`}>← 返回公告列表</a>
+    <header>
+      <div class="meta">
+        <time datetime={announcement.data.publishedAt.toISOString()}>{dateStr}</time>
+        {announcement.data.pinned && <span>置頂公告</span>}
+      </div>
+      <h1>{announcement.data.title}</h1>
+    </header>
+    <div class="announcement-body">
+      <Content />
+    </div>
+  </article>
+</BaseLayout>
+
+<style>
+  .announcement-detail { max-width: 680px; margin: 0 auto; padding: 48px 20px 96px; }
+  .back { display: inline-block; margin-bottom: 34px; color: var(--ink3); font-size: 13px; text-decoration: none; }
+  .back:hover { color: var(--accent); }
+  header { padding-bottom: 28px; margin-bottom: 34px; border-bottom: 1px solid var(--line); }
+  .meta { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; color: var(--ink3); font-size: 12px; }
+  .meta span { color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 8px; font-size: 10px; }
+  h1 { margin: 0; font-family: var(--font-serif); font-size: 28px; font-weight: 500; letter-spacing: 0.08em; line-height: 1.5; }
+  .announcement-body { font-family: var(--font-serif); font-size: 16px; line-height: 2; color: var(--ink); }
+  .announcement-body :global(p) { margin: 0 0 1.5em; }
+  .announcement-body :global(h2), .announcement-body :global(h3) { margin: 2em 0 0.8em; line-height: 1.5; }
+  .announcement-body :global(a) { color: var(--accent); }
+  .announcement-body :global(img) { max-width: 100%; height: auto; }
+  @media (max-width: 600px) { .announcement-detail { padding-top: 32px; } h1 { font-size: 23px; } }
+</style>

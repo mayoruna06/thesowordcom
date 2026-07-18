@@ -9,8 +9,10 @@ import { getCollection } from 'astro:content';
 const allWorks = await getCollection('works', ({ data }) => data.status !== 'draft');
 const allChapters = await getCollection('chapters');
 const announcements = await getCollection('announcements').then(a =>
-  a.sort((x, y) => y.data.publishedAt.getTime() - x.data.publishedAt.getTime())
+  a.sort((x, y) => Number(y.data.pinned) - Number(x.data.pinned)
+    || y.data.publishedAt.getTime() - x.data.publishedAt.getTime())
 );
+const pinnedAnnouncements = announcements.filter(a => a.data.pinned);
 
 const chapterCountByWork = allChapters.reduce<Record<string, number>>((acc, ch) => {
   acc[ch.data.work] = (acc[ch.data.work] ?? 0) + 1;
@@ -35,6 +37,18 @@ const completedWorks = allWorks.filter(w => w.data.status === 'completed');
     <div class="hero-h1">以文字為橋<br>過橋踢</div>
     <div class="hero-sub">想到就更，目前還再想</div>
   </div>
+
+  {pinnedAnnouncements.length > 0 && (
+    <div class="container pinned-wrap">
+      {pinnedAnnouncements.map(ann => (
+        <a class="pinned-announcement" href={`${import.meta.env.BASE_URL}announcements/${ann.slug}/`}>
+          <span class="pinned-label">置頂公告</span>
+          <span class="pinned-title">{ann.data.title}</span>
+          <span class="pinned-arrow">閱讀 →</span>
+        </a>
+      ))}
+    </div>
+  )}
 
   <div class="container">
     {allWorks.length === 0
@@ -123,6 +137,13 @@ const completedWorks = allWorks.filter(w => w.data.status === 'completed');
     position: relative;
   }
 
+
+  .pinned-wrap { padding-top: 24px; }
+  .pinned-announcement { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 6px; background: var(--warm); color: var(--ink); text-decoration: none; }
+  .pinned-announcement:hover { border-color: var(--accent); text-decoration: none; color: var(--ink); }
+  .pinned-label { color: var(--accent); font-size: 11px; letter-spacing: 0.12em; white-space: nowrap; }
+  .pinned-title { font-family: var(--font-serif); font-size: 14px; }
+  .pinned-arrow { color: var(--ink3); font-size: 12px; white-space: nowrap; }
   /* ── 空狀態 ── */
   .empty-state {
     text-align: center;
@@ -135,5 +156,8 @@ const completedWorks = allWorks.filter(w => w.data.status === 'completed');
   @media (max-width: 768px) {
     .hero { padding: 40px 20px; }
     .hero-h1 { font-size: 28px; }
+    .pinned-announcement { grid-template-columns: 1fr auto; }
+    .pinned-label { grid-column: 1 / -1; }
+    .pinned-wrap { padding-top: 16px; }
   }
 </style>

@@ -1,0 +1,59 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { getCollection } from 'astro:content';
+
+const announcements = await getCollection('announcements').then(items =>
+  items.sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned)
+    || b.data.publishedAt.getTime() - a.data.publishedAt.getTime())
+);
+const base = import.meta.env.BASE_URL;
+const dateStr = (d: Date) => d.toLocaleDateString('zh-TW', { year: 'numeric', month: 'long', day: 'numeric' });
+---
+
+<BaseLayout title="公告" description="小書樓最新公告">
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <main class="announcement-page">
+    <header>
+      <p class="eyebrow">ANNOUNCEMENTS</p>
+      <h1>公告</h1>
+      <p class="intro">小書樓的更新消息與站務通知。</p>
+    </header>
+
+    {announcements.length > 0 ? (
+      <div class="announcement-list">
+        {announcements.map(ann => (
+          <a class:list={['announcement-item', { pinned: ann.data.pinned }]} href={`${base}announcements/${ann.slug}/`}>
+            <div class="item-meta">
+              <time datetime={ann.data.publishedAt.toISOString()}>{dateStr(ann.data.publishedAt)}</time>
+              {ann.data.pinned && <span>置頂</span>}
+            </div>
+            <h2>{ann.data.title}</h2>
+            <span class="arrow">閱讀公告 →</span>
+          </a>
+        ))}
+      </div>
+    ) : <p class="empty">目前沒有公告。</p>}
+  </main>
+</BaseLayout>
+
+<style>
+  .announcement-page { max-width: 760px; margin: 0 auto; padding: 56px 20px 88px; }
+  header { margin-bottom: 30px; }
+  .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 11px; letter-spacing: 0.2em; }
+  h1 { margin: 0; font-family: var(--font-serif); font-size: 30px; font-weight: 500; letter-spacing: 0.12em; }
+  .intro { margin: 12px 0 0; color: var(--ink3); font-size: 14px; }
+  .announcement-list { display: grid; gap: 12px; }
+  .announcement-item { display: grid; grid-template-columns: 1fr auto; gap: 8px 16px; padding: 20px 22px; border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink); text-decoration: none; transition: border-color var(--transition), transform 0.15s; }
+  .announcement-item:hover { border-color: var(--accent); transform: translateY(-1px); color: var(--ink); text-decoration: none; }
+  .announcement-item.pinned { background: var(--warm); }
+  .item-meta { grid-column: 1 / -1; display: flex; gap: 10px; align-items: center; color: var(--ink3); font-size: 12px; }
+  .item-meta span { color: var(--accent); border: 1px solid var(--accent); border-radius: 999px; padding: 1px 7px; font-size: 10px; }
+  h2 { margin: 0; font-family: var(--font-serif); font-size: 18px; font-weight: 500; }
+  .arrow { align-self: center; color: var(--ink3); font-size: 12px; white-space: nowrap; }
+  .empty { padding: 36px; border: 1px dashed var(--line); border-radius: 8px; color: var(--ink3); text-align: center; }
+  @media (max-width: 600px) { .announcement-page { padding-top: 36px; } .announcement-item { padding: 16px; } }
+</style>

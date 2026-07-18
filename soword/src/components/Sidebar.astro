@@ -46,11 +46,12 @@ const dateStr = (d: Date) =>
       ? (
         <div class="announce-list">
           {announcements.slice(0, 5).map(ann => (
-            <div class="announce-item">
+            <a class="announce-item" href={`${base}announcements/${ann.slug}/`}>
               <span class="ann-date">{dateStr(ann.data.publishedAt)}</span>
               <span class="ann-title">{ann.data.title}</span>
-            </div>
+            </a>
           ))}
+          <a class="announce-more" href={`${base}announcements/`}>查看全部公告 →</a>
         </div>
       )
       : <p class="sidebar-empty">暫無公告</p>
@@ -105,11 +106,17 @@ const dateStr = (d: Date) =>
     gap: 12px;
     padding: 10px 0;
     border-bottom: 1px solid var(--bg2);
+    color: inherit;
+    text-decoration: none;
   }
+  .announce-item:hover .ann-title { color: var(--accent); }
   .announce-item:last-child { border-bottom: none; }
 
   .ann-date  { font-size: 11px; color: var(--ink3); white-space: nowrap; letter-spacing: 0.06em; }
   .ann-title { font-size: 13px; color: var(--ink2); line-height: 1.4; }
+
+  .announce-more { display: block; margin-top: 10px; color: var(--ink3); font-size: 12px; text-align: right; text-decoration: none; }
+  .announce-more:hover { color: var(--accent); }
 
   .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
 
