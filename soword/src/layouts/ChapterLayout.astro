@@ -192,7 +192,7 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
   // 收藏本章：登入後將作品加入收藏，並把入口定位在目前章節
   const bookmarkChapter = document.getElementById('bookmark-chapter');
   bookmarkChapter?.addEventListener('click', async () => {
-    (bookmarkChapter as HTMLButtonElement).disabled = true;
+    bookmarkChapter.setAttribute('disabled', '');
     const r = await fetch(`${adminUrl}/api/reader/bookmarks`, {
       method: 'POST', credentials: 'include',
       headers: { 'Content-Type': 'application/json' },
@@ -208,7 +208,7 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
     } else {
       bookmarkChapter.textContent = '稍後再試';
     }
-    (bookmarkChapter as HTMLButtonElement).disabled = false;
+    bookmarkChapter.removeAttribute('disabled');
   });
 
   // 字體大小控制
