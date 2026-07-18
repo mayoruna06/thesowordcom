@@ -3,6 +3,7 @@ import BaseLayout from './BaseLayout.astro';
 import Footer from '@components/Footer.astro';
 import '../styles/typography.css';
 import type { CollectionEntry } from 'astro:content';
+import { ADMIN_URL } from '../site.config';
 
 const base = import.meta.env.BASE_URL;
 
@@ -175,9 +176,16 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
   }
 </style>
 
-<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug }}>
+<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug, adminUrl: ADMIN_URL }}>
   // 記憶閱讀進度
   localStorage.setItem(`last-chapter-${workSlug}`, chapterSlug);
+
+  // 登入讀者：同步進度到雲端（未登入時安靜失敗即可）
+  fetch(`${adminUrl}/api/reader/progress`, {
+    method: 'POST', credentials: 'include',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ work_slug: workSlug, chapter_slug: chapterSlug }),
+  }).catch(() => {});
 
   // 字體大小控制
   let size = 0;

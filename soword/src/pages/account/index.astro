@@ -1,0 +1,208 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { getCollection } from 'astro:content';
+
+// 供「我的書架」把 slug 對回書名/章節名（靜態建置時生成對照表）
+const works = await getCollection('works');
+const chapters = await getCollection('chapters');
+const workTitles: Record<string, string> = Object.fromEntries(works.map(w => [w.slug, w.data.title]));
+const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c => [c.slug, c.data.title]));
+---
+
+<BaseLayout title="會員中心 — 小書樓" description="小書樓會員中心">
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <div class="account-wrap">
+    <div id="msg" class="msg" style="display:none"></div>
+
+    <!-- 未登入 -->
+    <div id="guest" style="display:none">
+      <div class="card">
+        <div class="tabs">
+          <button id="t-login" class="tab active">登入</button>
+          <button id="t-register" class="tab">註冊</button>
+        </div>
+
+        <div id="f-login">
+          <label>Email</label><input id="li-email" type="email" autocomplete="username" />
+          <label>密碼</label><input id="li-password" type="password" autocomplete="current-password" />
+          <button id="btn-login" class="btn-primary">登入</button>
+          <p class="hint"><a href="#" id="lnk-forgot">忘記密碼？</a></p>
+        </div>
+
+        <div id="f-register" style="display:none">
+          <label>Email</label><input id="re-email" type="email" autocomplete="username" />
+          <label>暱稱（顯示用，可留空）</label><input id="re-name" maxlength="30" />
+          <label>密碼（至少 8 個字元）</label><input id="re-password" type="password" autocomplete="new-password" />
+          <button id="btn-register" class="btn-primary">註冊</button>
+          <p class="hint">註冊後會寄一封驗證信到你的 Email，點擊信中連結即完成。</p>
+        </div>
+
+        <div id="f-forgot" style="display:none">
+          <label>Email</label><input id="fo-email" type="email" />
+          <button id="btn-forgot" class="btn-primary">寄送重設密碼信</button>
+          <p class="hint"><a href="#" id="lnk-back">← 回到登入</a></p>
+        </div>
+
+        <div id="f-reset" style="display:none">
+          <label>新密碼（至少 8 個字元）</label><input id="rs-password" type="password" autocomplete="new-password" />
+          <button id="btn-reset" class="btn-primary">確認重設</button>
+        </div>
+      </div>
+      <p class="author-link">作者請由此進入 <a id="lnk-admin" href="#">作者後台</a></p>
+    </div>
+
+    <!-- 已登入 -->
+    <div id="member" style="display:none">
+      <div class="card">
+        <div class="me-row">
+          <div><span id="me-name"></span> <span class="muted" id="me-email"></span></div>
+          <button id="btn-logout" class="btn-plain">登出</button>
+        </div>
+      </div>
+      <div class="card">
+        <h3>我的書架（讀到哪，接著讀）</h3>
+        <div id="shelf"><p class="muted">載入中…</p></div>
+      </div>
+    </div>
+  </div>
+</BaseLayout>
+
+<script define:vars={{ workTitles, chapterTitles }}>
+  window.__titles = { workTitles, chapterTitles };
+</script>
+
+<script>
+  import { ADMIN_URL } from '../../site.config';
+  const base = import.meta.env.BASE_URL;
+  const $ = (id: string) => document.getElementById(id)!;
+
+  async function api(path: string, body?: unknown) {
+    let r: Response;
+    try {
+      r = await fetch(`${ADMIN_URL}/api/reader${path}`, {
+        method: body === undefined ? 'GET' : 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch { throw new Error('連線失敗，請稍後再試'); }
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || '發生問題，請稍後再試');
+    return d;
+  }
+
+  function msg(text: string, ok = false) {
+    const el = $('msg');
+    el.textContent = text;
+    el.className = 'msg ' + (ok ? 'ok' : 'err');
+    el.style.display = '';
+    window.scrollTo({ top: 0 });
+  }
+
+  function show(section: 'guest' | 'member') {
+    $('guest').style.display = section === 'guest' ? '' : 'none';
+    $('member').style.display = section === 'member' ? '' : 'none';
+  }
+  function form(name: string) {
+    for (const f of ['login', 'register', 'forgot', 'reset']) $('f-' + f).style.display = f === name ? '' : 'none';
+    $('t-login').classList.toggle('active', name === 'login');
+    $('t-register').classList.toggle('active', name === 'register');
+  }
+
+  async function loadShelf() {
+    const { workTitles, chapterTitles } = (window as any).__titles;
+    const rows = await api('/progress');
+    $('shelf').innerHTML = rows.length
+      ? rows.map((p: any) => `<a class="shelf-item" href="${base}works/${p.work_slug}/${p.chapter_slug}/">
+          <span class="w">${workTitles[p.work_slug] || p.work_slug}</span>
+          <span class="c">${chapterTitles[p.chapter_slug] || p.chapter_slug} →</span></a>`).join('')
+      : '<p class="muted">還沒有閱讀紀錄。去<a href="' + base + '">首頁</a>挑一本開始吧！</p>';
+  }
+
+  async function boot() {
+    ($('lnk-admin') as HTMLAnchorElement).href = ADMIN_URL;
+    const params = new URLSearchParams(location.search);
+    try {
+      if (params.get('verify')) {
+        const d = await api('/verify', { token: params.get('verify') });
+        history.replaceState(null, '', location.pathname);
+        msg(d.message, true);
+      }
+      if (params.get('reset')) {
+        show('guest'); form('reset');
+        $('btn-reset').onclick = async () => {
+          try {
+            const d = await api('/reset', { token: params.get('reset'), password: ($('rs-password') as HTMLInputElement).value });
+            history.replaceState(null, '', location.pathname);
+            msg(d.message, true); form('login');
+          } catch (e: any) { msg(e.message); }
+        };
+      }
+    } catch (e: any) { msg(e.message); }
+
+    try {
+      const me = await api('/me');
+      $('me-name').textContent = me.display_name;
+      $('me-email').textContent = me.email;
+      show('member');
+      await loadShelf();
+    } catch { show('guest'); }
+  }
+
+  $('t-login').onclick = () => form('login');
+  $('t-register').onclick = () => form('register');
+  $('lnk-forgot').onclick = (e) => { e.preventDefault(); form('forgot'); };
+  $('lnk-back').onclick = (e) => { e.preventDefault(); form('login'); };
+
+  $('btn-login').onclick = async () => {
+    try {
+      await api('/login', { email: ($('li-email') as HTMLInputElement).value, password: ($('li-password') as HTMLInputElement).value });
+      location.reload();
+    } catch (e: any) { msg(e.message); }
+  };
+  $('btn-register').onclick = async () => {
+    try {
+      const d = await api('/register', {
+        email: ($('re-email') as HTMLInputElement).value,
+        display_name: ($('re-name') as HTMLInputElement).value,
+        password: ($('re-password') as HTMLInputElement).value,
+      });
+      msg(d.message, true); form('login');
+    } catch (e: any) { msg(e.message); }
+  };
+  $('btn-forgot').onclick = async () => {
+    try { msg((await api('/request-reset', { email: ($('fo-email') as HTMLInputElement).value })).message, true); }
+    catch (e: any) { msg(e.message); }
+  };
+  $('btn-logout').onclick = async () => { await api('/logout', {}).catch(() => {}); location.reload(); };
+
+  boot();
+</script>
+
+<style>
+  .account-wrap { max-width: 460px; margin: 48px auto; padding: 0 16px; }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: 10px; padding: 24px; margin-bottom: 16px; }
+  .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 8px; border: 1px solid var(--line); background: var(--bg); border-radius: 6px; cursor: pointer; font: inherit; }
+  .tab.active { background: var(--ink); color: var(--white); border-color: var(--ink); }
+  label { display: block; margin: 12px 0 4px; font-size: 13px; color: var(--ink2); }
+  input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px; font: inherit; box-sizing: border-box; }
+  .btn-primary { width: 100%; margin-top: 16px; padding: 10px; background: var(--ink); color: var(--white); border: none; border-radius: 6px; cursor: pointer; font: inherit; }
+  .btn-plain { padding: 6px 12px; background: none; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; font: inherit; }
+  .hint { font-size: 12px; color: var(--ink3); margin-top: 10px; }
+  .hint a, .author-link a { color: var(--ink2); }
+  .author-link { text-align: center; font-size: 13px; color: var(--ink3); }
+  .msg { padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
+  .msg.err { background: #fbeae7; color: #b3402f; }
+  .msg.ok { background: #e8f3e9; color: #3d7a44; }
+  .me-row { display: flex; justify-content: space-between; align-items: center; }
+  .muted { color: var(--ink3); font-size: 13px; }
+  h3 { margin: 0 0 12px; font-size: 15px; }
+  .shelf-item { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); }
+  .shelf-item:last-child { border-bottom: none; }
+  .shelf-item .c { color: var(--ink2); font-size: 13px; }
+</style>

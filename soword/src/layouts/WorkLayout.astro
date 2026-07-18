@@ -348,16 +348,24 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
     });
   });
 
-  // 繼續閱讀：從 localStorage 取上次章節
+  // 繼續閱讀：登入讀者以雲端進度為準，未登入用 localStorage
   const continueBtn = document.getElementById('btn-continue') as HTMLButtonElement | null;
   if (continueBtn) {
     const workSlug = continueBtn.dataset.work!;
-    const lastSlug = localStorage.getItem(`last-chapter-${workSlug}`);
     const base = import.meta.env.BASE_URL;
-    if (lastSlug) {
-      continueBtn.onclick = () => location.href = `${base}works/${workSlug}/${lastSlug}/`;
-    } else {
-      continueBtn.style.display = 'none';
-    }
+    const goto = (slug: string) => {
+      continueBtn.onclick = () => location.href = `${base}works/${workSlug}/${slug}/`;
+      continueBtn.style.display = '';
+    };
+    const lastSlug = localStorage.getItem(`last-chapter-${workSlug}`);
+    if (lastSlug) goto(lastSlug); else continueBtn.style.display = 'none';
+    import('../site.config').then(({ ADMIN_URL }) =>
+      fetch(`${ADMIN_URL}/api/reader/progress`, { credentials: 'include' })
+        .then(r => r.ok ? r.json() : [])
+        .then((rows: any[]) => {
+          const hit = rows.find(p => p.work_slug === workSlug);
+          if (hit) goto(hit.chapter_slug);
+        })
+    ).catch(() => {});
   }
 </script>
