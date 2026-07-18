@@ -57,6 +57,21 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
       <slot />
     </div>
 
+    <section class="comments" aria-labelledby="comments-title">
+      <div class="comments-heading">
+        <h2 id="comments-title">讀者留言</h2>
+        <span id="comment-count"></span>
+      </div>
+      <div id="comment-list" class="comment-list"><p class="comment-empty">載入留言中…</p></div>
+      <form id="comment-form" class="comment-form">
+        <label for="comment-body">留下想法</label>
+        <textarea id="comment-body" maxlength="1000" rows="4" placeholder="請友善交流，留言送出後會先由站方審核。" required></textarea>
+        <div class="comment-form-foot">
+          <span id="comment-status">需登入會員才能留言</span>
+          <button type="submit">送出留言</button>
+        </div>
+      </form>
+    </section>
     <!-- Chapter Nav -->
     <div class="chapter-nav-bar">
       {prev
@@ -140,6 +155,24 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
   .ctrl-btn:hover { border-color: var(--accent); color: var(--ink); }
   .ctrl-btn.is-bookmarked { border-color: var(--accent); color: var(--accent); }
 
+  /* ── Comments ── */
+  .comments { margin-top: 64px; padding-top: 36px; border-top: 1px solid var(--line); }
+  .comments-heading { display: flex; align-items: baseline; gap: 10px; margin-bottom: 20px; }
+  .comments h2 { margin: 0; font-family: var(--font-serif); font-size: 20px; font-weight: 500; }
+  #comment-count, #comment-status { color: var(--ink3); font-size: 12px; }
+  .comment-list { display: grid; gap: 12px; }
+  .comment-item { padding: 16px 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); }
+  .comment-meta { display: flex; justify-content: space-between; gap: 12px; margin-bottom: 8px; color: var(--ink3); font-size: 12px; }
+  .comment-author { color: var(--ink2); font-weight: 600; }
+  .comment-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; color: var(--ink2); font-size: 14px; line-height: 1.8; }
+  .comment-empty { color: var(--ink3); font-size: 13px; }
+  .comment-form { display: grid; gap: 10px; margin-top: 24px; padding: 18px; border-radius: 6px; background: var(--warm); }
+  .comment-form label { color: var(--ink2); font-size: 13px; font-weight: 600; }
+  .comment-form textarea { box-sizing: border-box; width: 100%; resize: vertical; padding: 12px; border: 1px solid var(--line); border-radius: 4px; background: var(--white); color: var(--ink); font: 14px/1.7 var(--font-sans); }
+  .comment-form textarea:focus { outline: 1px solid var(--accent); border-color: var(--accent); }
+  .comment-form-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .comment-form button { padding: 8px 16px; border: 1px solid var(--accent); border-radius: 4px; background: var(--accent); color: white; cursor: pointer; }
+  .comment-form button:disabled { opacity: .55; cursor: wait; }
   /* ── Chapter Nav ── */
   .chapter-nav-bar {
     display: flex;
@@ -227,6 +260,65 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
     if (r?.ok) renderChapterBookmark(chapterSlug);
     else bookmarkChapter.textContent = '稍後再試';
     bookmarkChapter.removeAttribute('disabled');
+  });
+  // 留言：公開讀取核准內容；會員送出後先進入待審
+  const commentList = document.getElementById('comment-list');
+  const commentCount = document.getElementById('comment-count');
+  const commentForm = document.getElementById('comment-form');
+  const commentBody = document.getElementById('comment-body');
+  const commentStatus = document.getElementById('comment-status');
+  const commentSubmit = commentForm?.querySelector('button');
+  const commentParams = new URLSearchParams({ work_slug: workSlug, chapter_slug: chapterSlug });
+
+  const renderComments = (rows) => {
+    if (!commentList) return;
+    commentList.replaceChildren();
+    if (!rows.length) {
+      const empty = document.createElement('p');
+      empty.className = 'comment-empty'; empty.textContent = '目前還沒有公開留言。';
+      commentList.append(empty);
+    } else rows.forEach(row => {
+      const item = document.createElement('article'); item.className = 'comment-item';
+      const meta = document.createElement('div'); meta.className = 'comment-meta';
+      const author = document.createElement('span'); author.className = 'comment-author';
+      author.textContent = row.display_name || '讀者';
+      const time = document.createElement('time'); time.dateTime = row.created_at;
+      time.textContent = new Date(row.created_at).toLocaleString('zh-TW');
+      const body = document.createElement('p'); body.className = 'comment-text'; body.textContent = row.body;
+      meta.append(author, time); item.append(meta, body); commentList.append(item);
+    });
+    if (commentCount) commentCount.textContent = `${rows.length} 則`;
+  };
+
+  const loadComments = () => fetch(`${adminUrl}/api/reader/comments?${commentParams}`)
+    .then(r => r.ok ? r.json() : Promise.reject())
+    .then(renderComments)
+    .catch(() => { if (commentList) commentList.textContent = '留言暫時無法載入。'; });
+  loadComments();
+
+  fetch(`${adminUrl}/api/reader/me`, { credentials: 'include' })
+    .then(r => { if (r.ok && commentStatus) commentStatus.textContent = '留言送出後會先由站方審核'; })
+    .catch(() => {});
+
+  commentForm?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const body = commentBody?.value.trim() || '';
+    if (!body) return;
+    commentSubmit?.setAttribute('disabled', '');
+    if (commentStatus) commentStatus.textContent = '送出中…';
+    const r = await fetch(`${adminUrl}/api/reader/comments`, {
+      method: 'POST', credentials: 'include', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ work_slug: workSlug, chapter_slug: chapterSlug, body }),
+    }).catch(() => null);
+    if (r?.status === 401) {
+      const next = encodeURIComponent(location.pathname + location.search + '#comments-title');
+      location.href = `${baseUrl}account/?next=${next}`; return;
+    }
+    const data = await r?.json().catch(() => ({}));
+    if (commentStatus) commentStatus.textContent = r?.ok
+      ? (data.message || '留言已送審') : (data.error || '留言送出失敗，請稍後再試');
+    if (r?.ok && commentBody) commentBody.value = '';
+    commentSubmit?.removeAttribute('disabled');
   });
   // 字體大小控制
   let size = 0;
