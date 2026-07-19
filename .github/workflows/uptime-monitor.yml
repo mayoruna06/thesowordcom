@@ -2,7 +2,7 @@ name: 小書樓外部健康監控
 
 on:
   schedule:
-    - cron: '2-57/5 * * * *'
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 permissions:
