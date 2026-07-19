@@ -1,6 +1,10 @@
 name: 小書樓外部健康監控
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/uptime-monitor.yml'
   schedule:
     - cron: '*/5 * * * *'
   workflow_dispatch:
