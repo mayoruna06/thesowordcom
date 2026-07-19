@@ -97,6 +97,7 @@ jobs:
                 repo,
                 title,
                 labels: [label],
+                assignees: [owner],
                 body: [
                   '外部監控在同一次執行中連續三次無法通過以下檢查：',
                   '',
