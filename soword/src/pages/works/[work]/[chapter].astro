@@ -1,6 +1,6 @@
 ---
 import ChapterLayout from '@layouts/ChapterLayout.astro';
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
   const works = await getCollection('works', ({ data }) => data.status !== 'draft');
@@ -31,9 +31,17 @@ export async function getStaticPaths() {
 }
 
 const { work, chapter, chapters, prev, next } = Astro.props;
-const { Content } = await render(chapter);
+// 內文以純文字原樣呈現：不解析 Markdown，換行與空行都依作者輸入保留
+const plainBody = chapter.body.replace(/\r\n/g, '\n').replace(/^\n+|\s+$/g, '');
 ---
 
 <ChapterLayout work={work} chapter={chapter} chapters={chapters} prev={prev} next={next}>
-  <Content />
+  <div class="plain-text">{plainBody}</div>
 </ChapterLayout>
+
+<style>
+  .plain-text {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+</style>
