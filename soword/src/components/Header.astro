@@ -28,9 +28,9 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
     background: var(--white);
     border-bottom: 1px solid var(--line);
     padding: 0 40px;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     height: 64px;
     position: sticky;
     top: 0;
@@ -47,6 +47,7 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
     align-items: center;
     gap: 10px;
     text-decoration: none;
+    justify-self: start;
   }
 
   .logo-dot {
@@ -76,6 +77,7 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
   .search-wrap {
     display: flex;
     align-items: center;
+    justify-self: end;
     background: var(--bg);
     border: 1px solid var(--line);
     border-radius: 20px;
