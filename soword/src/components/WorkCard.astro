@@ -10,7 +10,7 @@ interface Props {
 }
 
 const { work, chapterCount = 0, isNew = false } = Astro.props;
-const { title, author, authorSlug, cover, status, tags } = work.data;
+const { title, subtitle, author, authorSlug, cover, status, tags } = work.data;
 const workHref = `${base}works/${work.slug}/`;
 const authorHref = authorSlug ? `${base}authors/${authorSlug}/` : null;
 
@@ -36,6 +36,7 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
   </a>
   <div class="novel-info">
     <a class="novel-name" href={workHref}>{title}</a>
+    {subtitle && <div class="novel-subtitle" title={subtitle}>{subtitle}</div>}
     <div class="novel-meta">
       {authorHref ? <a class="author-link" href={authorHref}>{author}</a> : <span>{author}</span>}
       {tags[0] && <><span>・</span><span>{tags[0]}</span></>}
@@ -126,6 +127,16 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
     color: var(--ink);
     line-height: 1.4;
     letter-spacing: 0.05em;
+  }
+
+  .novel-subtitle {
+    margin-top: 3px;
+    color: var(--ink3);
+    font-size: 12px;
+    line-height: 1.5;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .novel-meta {
