@@ -43,6 +43,13 @@ const face = avatarFace(author.data.avatar, author.data.displayName);
       </div>
     </header>
 
+    {author.data.message && (
+      <section class="author-message" aria-labelledby="author-message-title">
+        <h2 id="author-message-title">作者想說的話</h2>
+        <p>{author.data.message}</p>
+      </section>
+    )}
+
     <section>
       <h2>作品</h2>
       {works.length ? (
@@ -64,5 +71,9 @@ const face = avatarFace(author.data.avatar, author.data.displayName);
   h1 { margin: 0 0 8px; font-family: var(--font-serif); font-size: 30px; letter-spacing: .08em; }
   h2 { font-family: var(--font-serif); font-size: 20px; margin-bottom: 20px; }
   .profile p, .empty { color: var(--ink2); line-height: 1.8; margin: 0; }
+  .author-message { margin: -16px 0 44px; padding: 22px 24px; border: 1px solid var(--line);
+    border-radius: 10px; background: var(--white); }
+  .author-message h2 { margin: 0 0 12px; }
+  .author-message p { margin: 0; color: var(--ink2); line-height: 1.9; white-space: pre-wrap; }
   .works-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 28px 20px; }
 </style>
