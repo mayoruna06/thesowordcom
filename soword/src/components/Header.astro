@@ -33,6 +33,7 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
         <div class="usermenu-head"><span id="usermenu-name"></span></div>
         <a href={`${base}account/#profile`}>個人資料</a>
         <a href={`${base}account/#bookmarks`}>我的收藏</a>
+        <a id="admin-menu-link" href="#" hidden>前往後台</a>
         <button type="button" id="btn-logout-menu">登出</button>
       </div>
     </div>
@@ -195,12 +196,14 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
   const list = document.getElementById('usermenu-list')!;
   const btn = document.getElementById('avatar-btn')!;
   const navLogin = document.getElementById('nav-login');
+  const adminMenuLink = document.getElementById('admin-menu-link') as HTMLAnchorElement;
+  adminMenuLink.href = ADMIN_URL;
 
   // 靜態網站無法在建置時得知登入狀態，改由前端詢問後台。
   // localStorage 只是為了避免每次換頁閃一下「登入」，真正依據仍是伺服器回應。
   const CACHE_KEY = 'soword-member';
 
-  function showMember(me: { display_name: string; avatar: string }) {
+  function showMember(me: { display_name: string; avatar: string; role?: string }) {
     const face = avatarFace(me.avatar, me.display_name);
     const faceEl = document.getElementById('avatar-face')!;
     faceEl.textContent = face.text;
@@ -208,10 +211,12 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
     document.getElementById('usermenu-name')!.textContent = me.display_name;
     menu.hidden = false;
     if (navLogin) navLogin.hidden = true;
+    adminMenuLink.hidden = me.role !== 'author' && me.role !== 'superadmin';
   }
 
   function showGuest() {
     menu.hidden = true;
+    adminMenuLink.hidden = true;
     if (navLogin) navLogin.hidden = false;
     localStorage.removeItem(CACHE_KEY);
   }
