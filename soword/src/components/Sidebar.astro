@@ -1,5 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
+import { collectTagStats, tagHref } from '../tags';
 
 const base = import.meta.env.BASE_URL;
 
@@ -16,8 +17,8 @@ const ranked = [...works]
   .sort((a, b) => (chapterCountByWork[b.slug] ?? 0) - (chapterCountByWork[a.slug] ?? 0))
   .slice(0, 5);
 
-// 標籤雲：聚合所有標籤
-const allTags = [...new Set(works.flatMap(w => w.data.tags))];
+// 標籤雲：依公開作品數排序，並保留每個標籤的作品數。
+const allTags = collectTagStats(works.map(w => w.data.tags));
 
 const dateStr = (d: Date) =>
   d.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
@@ -62,7 +63,12 @@ const dateStr = (d: Date) =>
     <div class="sidebar-card">
       <div class="sidebar-card-title">標籤分類</div>
       <div class="tag-cloud">
-        {allTags.map(t => <span class="tag">{t}</span>)}
+        {allTags.map(t => (
+          <a class="tag" href={tagHref(base, t.key)} aria-label={t.label + '，' + t.count + ' 部作品'}>
+            <span>{t.label}</span>
+            <span class="tag-count">{t.count}</span>
+          </a>
+        ))}
       </div>
     </div>
   )}
@@ -119,6 +125,7 @@ const dateStr = (d: Date) =>
   .announce-more:hover { color: var(--accent); }
 
   .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag-count { margin-left: 4px; color: var(--ink3); font-size: 10px; }
 
   .sidebar-empty { font-size: 13px; color: var(--ink3); padding: 4px 0; }
 </style>

@@ -1,0 +1,106 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import WorkCard from '@components/WorkCard.astro';
+import type { CollectionEntry } from 'astro:content';
+import { getCollection } from 'astro:content';
+import { collectTagStats, normalizeTags, tagHref, tagKey, type TagStat } from '../../tags';
+
+interface Props {
+  tag: string;
+  works: CollectionEntry<'works'>[];
+  chapterCountByWork: Record<string, number>;
+  allTags: TagStat[];
+}
+
+export async function getStaticPaths() {
+  const [works, chapters] = await Promise.all([
+    getCollection('works', ({ data }) => data.status !== 'draft'),
+    getCollection('chapters'),
+  ]);
+
+  const chapterCountByWork = chapters.reduce<Record<string, number>>((counts, chapter) => {
+    counts[chapter.data.work] = (counts[chapter.data.work] ?? 0) + 1;
+    return counts;
+  }, {});
+  const allTags = collectTagStats(works.map(work => work.data.tags));
+
+  return allTags.map(tag => ({
+    params: { tag: tag.key },
+    props: {
+      tag: tag.label,
+      works: works
+        .filter(work => normalizeTags(work.data.tags).some(value => tagKey(value) === tag.key))
+        .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()),
+      chapterCountByWork,
+      allTags,
+    },
+  }));
+}
+
+const { tag, works, chapterCountByWork, allTags } = Astro.props;
+const base = import.meta.env.BASE_URL;
+const currentKey = tagKey(tag);
+---
+
+<BaseLayout title={tag + ' — 標籤分類 — 小書樓'} description={'瀏覽小書樓中標記為「' + tag + '」的作品'}>
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <main class="container tag-page">
+    <nav class="breadcrumb" aria-label="麵包屑">
+      <a href={base}>首頁</a><span aria-hidden="true">／</span><span>標籤分類</span>
+    </nav>
+
+    <header class="tag-heading">
+      <p class="eyebrow">TAG</p>
+      <h1>{tag}</h1>
+      <p>共有 {works.length} 部作品</p>
+    </header>
+
+    <section aria-labelledby="tag-work-list">
+      <h2 id="tag-work-list" class="section-title">符合標籤的作品</h2>
+      <div class="novel-grid">
+        {works.map(work => (
+          <WorkCard work={work} chapterCount={chapterCountByWork[work.slug] ?? 0} />
+        ))}
+      </div>
+    </section>
+
+    <section class="browse-tags" aria-labelledby="browse-tag-list">
+      <h2 id="browse-tag-list">瀏覽其他標籤</h2>
+      <div class="tag-cloud">
+        {allTags.map(item => (
+          <a
+            class:list={['tag', { active: item.key === currentKey }]}
+            href={tagHref(base, item.key)}
+            aria-current={item.key === currentKey ? 'page' : undefined}
+          >
+            <span>{item.label}</span><span class="tag-count">{item.count}</span>
+          </a>
+        ))}
+      </div>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .tag-page { padding-top: 32px; padding-bottom: 88px; }
+  .breadcrumb { display: flex; gap: 8px; color: var(--ink3); font-size: 12px; }
+  .breadcrumb a:hover { color: var(--accent); text-decoration: underline; }
+  .tag-heading { padding: 48px 0 40px; }
+  .eyebrow { margin: 0 0 8px; color: var(--accent); font-size: 11px; letter-spacing: 0.22em; }
+  h1 { margin: 0; font-family: var(--font-serif); font-size: clamp(30px, 5vw, 44px); font-weight: 500; letter-spacing: 0.12em; }
+  .tag-heading p:last-child { margin: 12px 0 0; color: var(--ink3); font-size: 14px; }
+  .browse-tags { margin-top: 64px; padding: 24px; border: 1px solid var(--line); border-radius: 6px; background: var(--white); }
+  .browse-tags h2 { margin: 0 0 16px; font-family: var(--font-serif); font-size: 15px; font-weight: 500; letter-spacing: 0.12em; }
+  .tag-cloud { display: flex; flex-wrap: wrap; gap: 8px; }
+  .tag.active { border-color: var(--accent); background: var(--warm); color: var(--ink); }
+  .tag-count { margin-left: 5px; color: var(--ink3); font-size: 10px; }
+  @media (max-width: 600px) {
+    .tag-page { padding-top: 24px; padding-bottom: 64px; }
+    .tag-heading { padding: 36px 0 32px; }
+    .browse-tags { margin-top: 48px; padding: 18px; }
+  }
+</style>
