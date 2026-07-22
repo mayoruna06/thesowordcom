@@ -24,6 +24,7 @@ const authorsCollection = defineCollection({
     displayName: z.string(),
     avatar:      z.string().default(''),
     bio:         z.string().max(200).default(''),
+    message:     z.string().max(500).default(''),
   }),
 });
 const chaptersCollection = defineCollection({
