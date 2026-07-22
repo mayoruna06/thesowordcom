@@ -1,6 +1,7 @@
 ---
 title: "最弱魔導士在被隊友踢出後意外走上劍道之路成為世界最強劍聖·天下獨尊之無敵劍聖也會敗在後宮修羅場"
 author: "麻木小鴨"
+authorSlug: mamuxiaoya
 genre: "fantasy"
 status: "ongoing"
 summary: "最弱魔導士在被隊友踢出後意外走上劍道之路成為世界最強劍聖·天下獨尊之無敵劍聖也會敗在後宮修羅場"

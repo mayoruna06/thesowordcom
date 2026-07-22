@@ -27,7 +27,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
         </div>
 
         <div id="f-login">
-          <label>Email</label><input id="li-email" type="email" autocomplete="username" />
+          <label>帳號或 Email</label><input id="li-email" type="text" autocomplete="username" />
           <label>密碼</label><input id="li-password" type="password" autocomplete="current-password" />
           <button id="btn-login" class="btn-primary">登入</button>
           <p class="hint"><a href="#" id="lnk-forgot">忘記密碼？</a></p>
@@ -52,7 +52,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
           <button id="btn-reset" class="btn-primary">確認重設</button>
         </div>
       </div>
-      <p class="author-link">作者請由此進入 <a id="lnk-admin" href="#">作者後台</a></p>
+      <p class="author-link">作者與管理員可直接在上方登入前台；管理內容請進入 <a id="lnk-admin" href="#">作者後台</a></p>
     </div>
 
     <!-- 已登入 -->
