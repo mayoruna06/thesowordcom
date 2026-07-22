@@ -59,17 +59,44 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
     <div id="member" style="display:none">
       <div class="card">
         <div class="me-row">
-          <div><span id="me-name"></span> <span class="muted" id="me-email"></span></div>
+          <div class="me-id">
+            <span class="avatar-lg" id="me-avatar"></span>
+            <div>
+              <div class="me-name-line">
+                <span id="me-name"></span>
+                <span id="me-role" class="role-badge" style="display:none"></span>
+              </div>
+              <div class="muted" id="me-email"></div>
+            </div>
+          </div>
           <button id="btn-logout" class="btn-plain">登出</button>
+        </div>
+      </div>
+
+      <div class="card" id="profile">
+        <h3>個人資料</h3>
+        <label for="pf-name">暱稱</label>
+        <input id="pf-name" maxlength="30" />
+        <label>頭像</label>
+        <div class="avatar-picker" id="pf-avatars"></div>
+        <label for="pf-bio">個人簡介（200 字以內，選填）</label>
+        <textarea id="pf-bio" maxlength="200" rows="3" placeholder="介紹一下自己，或寫下最近在看的書"></textarea>
+        <p id="public-profile-note" class="public-profile-note" style="display:none">
+          儲存後會同步更新公開作者頁，通常需等待 GitHub Pages 部署 1–2 分鐘。
+          <a id="public-profile-link" href="#" target="_blank" rel="noopener">查看公開作者頁</a>
+        </p>
+        <div class="pf-foot">
+          <span class="muted" id="pf-status"></span>
+          <button id="btn-save-profile" class="btn-primary">儲存</button>
         </div>
       </div>
       <div class="card">
         <h3>我的書架（讀到哪，接著讀）</h3>
         <div id="shelf"><p class="muted">載入中…</p></div>
       </div>
-      <div class="card">
-        <h3>我的收藏</h3>
-        <div id="bookmarks"><p class="muted">載入中…</p></div>
+      <div class="card" id="bookmarks-card">
+        <h3 id="bookmarks">我的收藏</h3>
+        <div id="bookmarks-list"><p class="muted">載入中…</p></div>
       </div>
     </div>
   </div>
@@ -81,6 +108,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
 
 <script>
   import { ADMIN_URL } from '../../site.config';
+  import { PRESET_AVATARS, avatarFace } from '../../avatars';
   const base = import.meta.env.BASE_URL;
   const requestedNext = new URLSearchParams(location.search).get('next');
   const nextPath = requestedNext?.startsWith(base) ? requestedNext : null;
@@ -132,7 +160,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
   async function loadBookmarks() {
     const { workTitles, chapterTitles } = (window as any).__titles;
     const rows = await api('/bookmarks');
-    $('bookmarks').innerHTML = rows.length
+    $('bookmarks-list').innerHTML = rows.length
       ? rows.map((b: any) => {
           const href = b.chapter_slug
             ? `${base}works/${b.work_slug}/${b.chapter_slug}/`
@@ -176,12 +204,92 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
 
     try {
       const me = await api('/me');
-      $('me-name').textContent = me.display_name;
-      $('me-email').textContent = me.email;
+      fillProfile(me);
       show('member');
       await Promise.all([loadShelf(), loadBookmarks()]);
+      // 從頁首選單帶 #profile / #bookmarks 進來時捲到該區塊
+      if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' });
     } catch { show('guest'); }
   }
+
+  // ── 個人資料 ──
+  let pickedAvatar = '';
+
+  function paintAvatar(avatar: string, name: string) {
+    const face = avatarFace(avatar, name);
+    const el = $('me-avatar');
+    el.textContent = face.text;
+    el.style.background = face.tone;
+  }
+
+  function fillProfile(me: any) {
+    pickedAvatar = me.avatar || '';
+    $('me-name').textContent = me.display_name;
+    const roleBadge = $('me-role');
+    const roleLabel = me.role === 'superadmin' ? '超級管理員' : me.role === 'author' ? '作者' : '';
+    roleBadge.textContent = roleLabel;
+    roleBadge.style.display = roleLabel ? '' : 'none';
+    $('me-email').textContent = me.email;
+    ($('pf-name') as HTMLInputElement).value = me.display_name || '';
+    ($('pf-bio') as HTMLTextAreaElement).value = me.bio || '';
+    paintAvatar(pickedAvatar, me.display_name);
+    renderAvatarPicker();
+    const publicNote = $('public-profile-note');
+    const publicLink = $('public-profile-link') as HTMLAnchorElement;
+    const hasPublicProfile = ['author', 'superadmin'].includes(me.role) && Boolean(me.profile_slug);
+    publicNote.style.display = hasPublicProfile ? '' : 'none';
+    if (hasPublicProfile) publicLink.href = `${base}authors/${encodeURIComponent(me.profile_slug)}/`;
+    // 讓頁首頭像立即同步（頁首讀的是同一份快取）
+    localStorage.setItem('soword-member', JSON.stringify({ display_name: me.display_name, avatar: pickedAvatar }));
+  }
+
+  function renderAvatarPicker() {
+    const name = ($('pf-name') as HTMLInputElement).value;
+    const opts = [{ key: '', emoji: '', label: '用暱稱首字' }, ...PRESET_AVATARS];
+    $('pf-avatars').innerHTML = opts.map(o => {
+      const value = o.key ? `preset:${o.key}` : '';
+      const face = avatarFace(value, name);
+      return `<button type="button" class="avatar-opt${value === pickedAvatar ? ' is-picked' : ''}"
+        data-value="${value}" title="${o.label}" aria-label="${o.label}"
+        style="background:${face.tone}">${face.text}</button>`;
+    }).join('');
+    $('pf-avatars').querySelectorAll<HTMLButtonElement>('.avatar-opt').forEach(b => {
+      b.onclick = () => {
+        pickedAvatar = b.dataset.value || '';
+        paintAvatar(pickedAvatar, ($('pf-name') as HTMLInputElement).value);
+        renderAvatarPicker();
+      };
+    });
+  }
+
+  $('pf-name').addEventListener('input', () => {
+    // 沒挑頭像時，首字頭像要跟著暱稱變動
+    if (!pickedAvatar) {
+      paintAvatar('', ($('pf-name') as HTMLInputElement).value);
+      renderAvatarPicker();
+    }
+  });
+
+  $('btn-save-profile').onclick = async () => {
+    const btn = $('btn-save-profile') as HTMLButtonElement;
+    btn.disabled = true;
+    $('pf-status').textContent = '儲存中…';
+    try {
+      const saved = await api('/profile', {
+        display_name: ($('pf-name') as HTMLInputElement).value,
+        avatar: pickedAvatar,
+        bio: ($('pf-bio') as HTMLTextAreaElement).value,
+      });
+      fillProfile({ ...saved, email: $('me-email').textContent });
+      $('pf-status').textContent = saved.public_profile_published
+        ? '已儲存，公開作者頁正在部署'
+        : '已儲存';
+      setTimeout(() => ($('pf-status').textContent = ''), 5000);
+    } catch (e: any) {
+      $('pf-status').textContent = e.message;
+    }
+    btn.disabled = false;
+  };
 
   $('t-login').onclick = () => form('login');
   $('t-register').onclick = () => form('register');
@@ -229,7 +337,53 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
   .msg { padding: 10px 14px; border-radius: 6px; margin-bottom: 14px; font-size: 14px; }
   .msg.err { background: #fbeae7; color: #b3402f; }
   .msg.ok { background: #e8f3e9; color: #3d7a44; }
-  .me-row { display: flex; justify-content: space-between; align-items: center; }
+  .me-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+  .me-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .me-id > div { min-width: 0; }
+  .me-id .muted { font-size: 13px; word-break: break-all; }
+  .me-name-line { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .role-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 7px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--bg2);
+    color: var(--accent);
+    font-size: 11px;
+    line-height: 1.4;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  .avatar-lg {
+    width: 46px; height: 46px; flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+  }
+
+  .avatar-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .avatar-opt {
+    width: 40px; height: 40px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex; align-items: center; justify-content: center;
+    padding: 0;
+    transition: border-color var(--transition), transform var(--transition);
+  }
+  .avatar-opt:hover { transform: translateY(-1px); }
+  .avatar-opt.is-picked { border-color: var(--accent2); border-width: 2px; }
+
+  .pf-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
+  .pf-foot .muted { font-size: 13px; }
+  .public-profile-note { margin: 12px 0 0; color: var(--ink3); font-size: 12px; line-height: 1.7; }
+  .public-profile-note a { color: var(--accent); text-decoration: underline; }
+  #pf-bio { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; padding: 10px;
+            border: 1px solid var(--line); border-radius: 6px; background: var(--white); color: var(--ink); }
   .muted { color: var(--ink3); font-size: 13px; }
   h3 { margin: 0 0 12px; font-size: 15px; }
   .shelf-item { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); }
