@@ -81,6 +81,10 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
         <div class="avatar-picker" id="pf-avatars"></div>
         <label for="pf-bio">個人簡介（200 字以內，選填）</label>
         <textarea id="pf-bio" maxlength="200" rows="3" placeholder="介紹一下自己，或寫下最近在看的書"></textarea>
+        <p id="public-profile-note" class="public-profile-note" style="display:none">
+          儲存後會同步更新公開作者頁，通常需等待 GitHub Pages 部署 1–2 分鐘。
+          <a id="public-profile-link" href="#" target="_blank" rel="noopener">查看公開作者頁</a>
+        </p>
         <div class="pf-foot">
           <span class="muted" id="pf-status"></span>
           <button id="btn-save-profile" class="btn-primary">儲存</button>
@@ -230,6 +234,11 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
     ($('pf-bio') as HTMLTextAreaElement).value = me.bio || '';
     paintAvatar(pickedAvatar, me.display_name);
     renderAvatarPicker();
+    const publicNote = $('public-profile-note');
+    const publicLink = $('public-profile-link') as HTMLAnchorElement;
+    const hasPublicProfile = ['author', 'superadmin'].includes(me.role) && Boolean(me.profile_slug);
+    publicNote.style.display = hasPublicProfile ? '' : 'none';
+    if (hasPublicProfile) publicLink.href = `${base}authors/${encodeURIComponent(me.profile_slug)}/`;
     // 讓頁首頭像立即同步（頁首讀的是同一份快取）
     localStorage.setItem('soword-member', JSON.stringify({ display_name: me.display_name, avatar: pickedAvatar }));
   }
@@ -272,8 +281,10 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
         bio: ($('pf-bio') as HTMLTextAreaElement).value,
       });
       fillProfile({ ...saved, email: $('me-email').textContent });
-      $('pf-status').textContent = '已儲存';
-      setTimeout(() => ($('pf-status').textContent = ''), 3000);
+      $('pf-status').textContent = saved.public_profile_published
+        ? '已儲存，公開作者頁正在部署'
+        : '已儲存';
+      setTimeout(() => ($('pf-status').textContent = ''), 5000);
     } catch (e: any) {
       $('pf-status').textContent = e.message;
     }
@@ -369,6 +380,8 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
 
   .pf-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
   .pf-foot .muted { font-size: 13px; }
+  .public-profile-note { margin: 12px 0 0; color: var(--ink3); font-size: 12px; line-height: 1.7; }
+  .public-profile-note a { color: var(--accent); text-decoration: underline; }
   #pf-bio { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; padding: 10px;
             border: 1px solid var(--line); border-radius: 6px; background: var(--white); color: var(--ink); }
   .muted { color: var(--ink3); font-size: 13px; }

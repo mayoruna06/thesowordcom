@@ -3,6 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import WorkCard from '@components/WorkCard.astro';
+import { avatarFace } from '../../avatars';
 import { getCollection } from 'astro:content';
 
 export async function getStaticPaths() {
@@ -21,16 +22,20 @@ export async function getStaticPaths() {
 
 const { author, works } = Astro.props;
 const { Content } = await author.render();
+const face = avatarFace(author.data.avatar, author.data.displayName);
 ---
 
-<BaseLayout title={author.data.displayName} description={author.data.bio || `${author.data.displayName} ?????`}>
+<BaseLayout
+  title={author.data.displayName}
+  description={author.data.bio || `${author.data.displayName} 的作者頁`}
+>
   <Header slot="header" />
   <Footer slot="footer" />
 
   <main class="author-page container">
-    <a class="back" href={import.meta.env.BASE_URL}>? ?????</a>
+    <a class="back" href={import.meta.env.BASE_URL}>← 回到小書樓</a>
     <header class="profile">
-      <div class="avatar" aria-hidden="true">{author.data.displayName.slice(0, 1)}</div>
+      <div class="avatar" aria-hidden="true" style={`background:${face.tone}`}>{face.text}</div>
       <div>
         <h1>{author.data.displayName}</h1>
         {author.data.bio && <p>{author.data.bio}</p>}
@@ -39,12 +44,12 @@ const { Content } = await author.render();
     </header>
 
     <section>
-      <h2>??</h2>
+      <h2>作品</h2>
       {works.length ? (
         <div class="works-grid">
           {works.map(work => <WorkCard work={work} />)}
         </div>
-      ) : <p class="empty">?????????</p>}
+      ) : <p class="empty">目前沒有公開作品。</p>}
     </section>
   </main>
 </BaseLayout>
@@ -52,8 +57,9 @@ const { Content } = await author.render();
 <style>
   .author-page { padding: 40px 16px 80px; }
   .back { color: var(--ink3); font-size: 13px; text-decoration: none; }
+  .back:hover { color: var(--accent); text-decoration: underline; }
   .profile { display: flex; gap: 20px; align-items: center; margin: 28px 0 44px; }
-  .avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--bg2); border: 1px solid var(--line);
+  .avatar { width: 72px; height: 72px; border-radius: 50%; border: 1px solid var(--line);
     display: grid; place-items: center; font-family: var(--font-serif); font-size: 28px; color: var(--ink2); }
   h1 { margin: 0 0 8px; font-family: var(--font-serif); font-size: 30px; letter-spacing: .08em; }
   h2 { font-family: var(--font-serif); font-size: 20px; margin-bottom: 20px; }
