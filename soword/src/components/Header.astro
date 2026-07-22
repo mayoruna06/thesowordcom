@@ -13,14 +13,31 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
   <nav>
     <a href={base} class:list={{ active: isHome }}>首頁</a>
     <a href={`${base}announcements/`} class:list={{ active: isAnnouncements }}>公告</a>
-    <a href={`${base}account/`}>登入</a>
+    <a href={`${base}account/`} id="nav-login">登入</a>
   </nav>
-  <form class="search-wrap" role="search" action={`${base}search/`} method="get">
-    <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
-    </svg>
-    <input name="q" type="search" maxlength="50" placeholder="搜尋小說、內文…" aria-label="搜尋小說與內文" />
-  </form>
+
+  <div class="header-right">
+    <form class="search-wrap" role="search" action={`${base}search/`} method="get">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+      <input name="q" type="search" maxlength="50" placeholder="搜尋小說、內文…" aria-label="搜尋小說與內文" />
+    </form>
+
+    <!-- 登入後由下方 script 顯示；靜態網站無法在建置時得知登入狀態 -->
+    <div class="usermenu" id="usermenu" hidden>
+      <button id="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="會員選單">
+        <span id="avatar-face"></span>
+      </button>
+      <div class="usermenu-list" id="usermenu-list" hidden>
+        <div class="usermenu-head"><span id="usermenu-name"></span></div>
+        <a href={`${base}account/#profile`}>個人資料</a>
+        <a href={`${base}account/#bookmarks`}>我的收藏</a>
+        <a id="admin-menu-link" href="#" hidden>前往後台</a>
+        <button type="button" id="btn-logout-menu">登出</button>
+      </div>
+    </div>
+  </div>
 </header>
 
 <style>
@@ -28,9 +45,9 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
     background: var(--white);
     border-bottom: 1px solid var(--line);
     padding: 0 40px;
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
     align-items: center;
-    justify-content: space-between;
     height: 64px;
     position: sticky;
     top: 0;
@@ -47,6 +64,7 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
     align-items: center;
     gap: 10px;
     text-decoration: none;
+    justify-self: start;
   }
 
   .logo-dot {
@@ -73,6 +91,13 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
 
   nav a:hover, nav a.active { color: var(--ink); }
 
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-self: end;
+  }
+
   .search-wrap {
     display: flex;
     align-items: center;
@@ -96,10 +121,132 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
   .search-wrap input::placeholder { color: var(--ink3); }
   .search-wrap svg { color: var(--ink3); flex-shrink: 0; }
 
+  /* ── 會員頭像選單 ── */
+  .usermenu { position: relative; flex-shrink: 0; }
+
+  #avatar-btn {
+    width: 34px; height: 34px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--bg);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    padding: 0;
+    transition: border-color var(--transition);
+  }
+  #avatar-btn:hover { border-color: var(--accent2); }
+
+  .usermenu-list {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 8px);
+    min-width: 160px;
+    background: var(--white);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: 0 6px 20px rgba(43, 38, 32, 0.12);
+    padding: 6px;
+    z-index: 200;
+  }
+
+  .usermenu-head {
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 6px;
+    font-size: 13px;
+    color: var(--ink2);
+    font-weight: 600;
+    word-break: break-all;
+  }
+
+  .usermenu-list a,
+  .usermenu-list button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 9px 10px;
+    border: 0;
+    border-radius: 6px;
+    background: none;
+    font: inherit;
+    font-size: 13.5px;
+    color: var(--ink2);
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .usermenu-list a:hover,
+  .usermenu-list button:hover { background: var(--bg); color: var(--ink); text-decoration: none; }
+
   @media (max-width: 768px) {
     .site-header { padding: 0 16px; }
     nav { display: none; }
-    .search-wrap { display: flex; width: min(180px, 52vw); padding-inline: 10px; }
+    .header-right { gap: 8px; }
+    .search-wrap { display: flex; width: min(150px, 42vw); padding-inline: 10px; }
     .search-wrap input { width: 100%; min-width: 0; }
   }
 </style>
+
+<script>
+  import { ADMIN_URL } from '../site.config';
+  import { avatarFace } from '../avatars';
+
+  const base = import.meta.env.BASE_URL;
+  const menu = document.getElementById('usermenu')!;
+  const list = document.getElementById('usermenu-list')!;
+  const btn = document.getElementById('avatar-btn')!;
+  const navLogin = document.getElementById('nav-login');
+  const adminMenuLink = document.getElementById('admin-menu-link') as HTMLAnchorElement;
+  adminMenuLink.href = ADMIN_URL;
+
+  // 靜態網站無法在建置時得知登入狀態，改由前端詢問後台。
+  // localStorage 只是為了避免每次換頁閃一下「登入」，真正依據仍是伺服器回應。
+  const CACHE_KEY = 'soword-member';
+
+  function showMember(me: { display_name: string; avatar: string; role?: string }) {
+    const face = avatarFace(me.avatar, me.display_name);
+    const faceEl = document.getElementById('avatar-face')!;
+    faceEl.textContent = face.text;
+    btn.style.background = face.tone;
+    document.getElementById('usermenu-name')!.textContent = me.display_name;
+    menu.hidden = false;
+    if (navLogin) navLogin.hidden = true;
+    adminMenuLink.hidden = me.role !== 'author' && me.role !== 'superadmin';
+  }
+
+  function showGuest() {
+    menu.hidden = true;
+    adminMenuLink.hidden = true;
+    if (navLogin) navLogin.hidden = false;
+    localStorage.removeItem(CACHE_KEY);
+  }
+
+  const cached = localStorage.getItem(CACHE_KEY);
+  if (cached) { try { showMember(JSON.parse(cached)); } catch { /* 快取壞了就等伺服器回應 */ } }
+
+  fetch(`${ADMIN_URL}/api/reader/me`, { credentials: 'include' })
+    .then(r => (r.ok ? r.json() : Promise.reject()))
+    .then((me) => {
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ display_name: me.display_name, avatar: me.avatar || '' }));
+      showMember(me);
+    })
+    .catch(() => showGuest());
+
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const open = list.hidden;
+    list.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+  });
+  document.addEventListener('click', () => {
+    list.hidden = true;
+    btn.setAttribute('aria-expanded', 'false');
+  });
+  list.addEventListener('click', (e) => e.stopPropagation());
+
+  document.getElementById('btn-logout-menu')!.addEventListener('click', async () => {
+    await fetch(`${ADMIN_URL}/api/reader/logout`, { method: 'POST', credentials: 'include' }).catch(() => {});
+    localStorage.removeItem(CACHE_KEY);
+    location.href = base;
+  });
+</script>
