@@ -5,6 +5,7 @@ const worksCollection = defineCollection({
   schema: z.object({
     title:          z.string(),
     author:         z.string().default('勒索沃德'),
+    authorSlug:     z.string().regex(/^[a-z0-9][a-z0-9-]*$/).optional(),
     genre:          z.enum(['romance', 'fantasy', 'sci-fi', 'thriller', 'slice-of-life', 'other']),
     status:         z.enum(['ongoing', 'completed', 'hiatus', 'draft']),
     summary:        z.string().max(200),
@@ -17,6 +18,14 @@ const worksCollection = defineCollection({
   }),
 });
 
+const authorsCollection = defineCollection({
+  type: 'content',
+  schema: z.object({
+    displayName: z.string(),
+    avatar:      z.string().default(''),
+    bio:         z.string().max(200).default(''),
+  }),
+});
 const chaptersCollection = defineCollection({
   type: 'content',
   schema: z.object({
@@ -40,6 +49,7 @@ const announcementsCollection = defineCollection({
 
 export const collections = {
   works:         worksCollection,
+  authors:       authorsCollection,
   chapters:      chaptersCollection,
   announcements: announcementsCollection,
 };

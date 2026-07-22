@@ -1,6 +1,7 @@
 ---
 title: "未知樂園"
 author: "會員制餐廳"
+authorSlug: huiyuanzhicanting
 genre: "other"
 status: "ongoing"
 summary: "或許也沒有人知道世界上有這一個地方，是僅屬於他們的樂園。"

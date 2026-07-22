@@ -1,0 +1,62 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import WorkCard from '@components/WorkCard.astro';
+import { getCollection } from 'astro:content';
+
+export async function getStaticPaths() {
+  const [authors, works] = await Promise.all([
+    getCollection('authors'),
+    getCollection('works', ({ data }) => data.status !== 'draft'),
+  ]);
+  return authors.map(author => ({
+    params: { author: author.slug },
+    props: {
+      author,
+      works: works.filter(work => work.data.authorSlug === author.slug),
+    },
+  }));
+}
+
+const { author, works } = Astro.props;
+const { Content } = await author.render();
+---
+
+<BaseLayout title={author.data.displayName} description={author.data.bio || `${author.data.displayName} ?????`}>
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <main class="author-page container">
+    <a class="back" href={import.meta.env.BASE_URL}>? ?????</a>
+    <header class="profile">
+      <div class="avatar" aria-hidden="true">{author.data.displayName.slice(0, 1)}</div>
+      <div>
+        <h1>{author.data.displayName}</h1>
+        {author.data.bio && <p>{author.data.bio}</p>}
+        <Content />
+      </div>
+    </header>
+
+    <section>
+      <h2>??</h2>
+      {works.length ? (
+        <div class="works-grid">
+          {works.map(work => <WorkCard work={work} />)}
+        </div>
+      ) : <p class="empty">?????????</p>}
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .author-page { padding: 40px 16px 80px; }
+  .back { color: var(--ink3); font-size: 13px; text-decoration: none; }
+  .profile { display: flex; gap: 20px; align-items: center; margin: 28px 0 44px; }
+  .avatar { width: 72px; height: 72px; border-radius: 50%; background: var(--bg2); border: 1px solid var(--line);
+    display: grid; place-items: center; font-family: var(--font-serif); font-size: 28px; color: var(--ink2); }
+  h1 { margin: 0 0 8px; font-family: var(--font-serif); font-size: 30px; letter-spacing: .08em; }
+  h2 { font-family: var(--font-serif); font-size: 20px; margin-bottom: 20px; }
+  .profile p, .empty { color: var(--ink2); line-height: 1.8; margin: 0; }
+  .works-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 28px 20px; }
+</style>

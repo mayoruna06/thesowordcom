@@ -10,20 +10,22 @@ interface Props {
 }
 
 const { work, chapterCount = 0, isNew = false } = Astro.props;
-const { title, author, cover, status, tags } = work.data;
+const { title, author, authorSlug, cover, status, tags } = work.data;
+const workHref = `${base}works/${work.slug}/`;
+const authorHref = authorSlug ? `${base}authors/${authorSlug}/` : null;
 
 const badgeClass = isNew ? 'badge-new' : status === 'ongoing' ? 'badge-ongoing' : status === 'hiatus' ? 'badge-hiatus' : 'badge-end';
 const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status === 'hiatus' ? '暫停' : '完結';
 ---
 
 <div class="novel-card">
-  <a href={`${base}works/${work.slug}/`}>
+  <a class="cover-link" href={workHref} aria-label={title}>
     <div class="cover-wrap">
       {cover
         ? <img src={`${base}images/covers/${cover}`} alt={title} class="cover-img" loading="lazy" />
         : (
           <div class="cover-blank">
-            <div class="cover-blank-deco">✦</div>
+            <div class="cover-blank-deco">書</div>
             <div class="cover-blank-title">{title}</div>
             <div class="cover-blank-author">{author}</div>
           </div>
@@ -31,14 +33,14 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
       }
       <span class={`badge ${badgeClass}`}>{badgeLabel}</span>
     </div>
-    <div class="novel-info">
-      <div class="novel-name">{title}</div>
-      <div class="novel-meta">
-        <span>{author}</span>
-        {tags[0] && <><span>·</span><span>{tags[0]}</span></>}
-      </div>
-    </div>
   </a>
+  <div class="novel-info">
+    <a class="novel-name" href={workHref}>{title}</a>
+    <div class="novel-meta">
+      {authorHref ? <a class="author-link" href={authorHref}>{author}</a> : <span>{author}</span>}
+      {tags[0] && <><span>・</span><span>{tags[0]}</span></>}
+    </div>
+  </div>
 </div>
 
 <style>
@@ -49,6 +51,8 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
   .novel-card:hover { transform: translateY(-4px); }
 
   .novel-card a { text-decoration: none; color: inherit; display: block; }
+  .novel-meta .author-link { display: inline; }
+  .novel-meta .author-link:hover { color: var(--accent); text-decoration: underline; }
 
   /* 書封 */
   .cover-wrap {

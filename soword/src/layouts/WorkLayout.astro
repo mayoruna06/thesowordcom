@@ -13,7 +13,7 @@ interface Props {
 }
 
 const { work, chapters } = Astro.props;
-const { title, author, summary, cover, genre, status, tags, contentWarning, publishedAt, updatedAt } = work.data;
+const { title, author, authorSlug, summary, cover, genre, status, tags, contentWarning, publishedAt, updatedAt } = work.data;
 
 const statusLabel: Record<string, string> = {
   ongoing: '連載中', completed: '已完結', hiatus: '暫停更新',
@@ -57,7 +57,7 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
         <!-- 資訊 -->
         <div class="detail-meta">
           <h1>{title}</h1>
-          <div class="author-line">作者：{author}　最後更新：{lastDate}</div>
+          <div class="author-line">作者：{authorSlug ? <a href={`${base}authors/${authorSlug}/`}>{author}</a> : author}　最後更新：{lastDate}</div>
 
           {tags.length > 0 && (
             <div class="detail-tags">
@@ -201,6 +201,9 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
     color: var(--ink);
     margin-bottom: 6px;
   }
+
+  .author-line a { color: inherit; }
+  .author-line a:hover { color: var(--accent); }
 
   .author-line {
     font-size: 14px;

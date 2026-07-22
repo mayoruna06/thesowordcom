@@ -1,4 +1,6 @@
 ---
+author: ''勒索沃德''
+authorSlug: lesuowode
 title: "未被聽見的旋律"
 genre: "thriller"
 status: "ongoing"

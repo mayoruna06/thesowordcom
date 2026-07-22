@@ -1,6 +1,7 @@
 ---
 title: "隕落繁星(ABO)"
 author: "會員制餐廳"
+authorSlug: huiyuanzhicanting
 genre: "other"
 status: "completed"
 summary: "1v1 生子 甜文"
