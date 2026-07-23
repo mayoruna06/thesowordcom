@@ -1,6 +1,22 @@
 # 小書樓（The So Word）靜態網站技術規格書
 
-**版本：** v1.0 | **日期：** 2026-06-02 | **作者：** Jasper（勒索沃德）
+**版本：** v2.1 | **日期：** 2026-07-23 | **作者：** Jasper（勒索沃德）
+
+---
+
+## 0. 目前正式架構（取代舊 AWS 章節）
+
+自 2026-07 起，公開靜態網站已由 AWS S3／CloudFront 遷移至 GitHub Pages。本文後方原有 AWS 建置內容僅保留為歷史參考，不是目前正式維運方式。
+
+目前系統分工：
+
+- `thesowordcom`：Astro 靜態網站與 Markdown 內容，推送 `main` 後由 GitHub Actions 建置並部署至 GitHub Pages。
+- `soword-admin`：Node.js 後台與會員 API，運行於 GCP Compute Engine。
+- PostgreSQL：保存登入身分、角色、公開作者檔案、作品／章節目錄、管理權限、標籤關聯、收藏、進度與留言。
+- GitHub：保存公開內容及部署歷史；公開作者頁、作品頁與標籤頁不依賴 GCP 即時渲染。
+- Google Cloud：後台 API、PostgreSQL、備份、Email Alert 與自動部署。
+
+Phase 8 起，作者、作品、章節與標籤使用 UUID 關聯；Markdown 中的 slug 仍作為公開網址與相容欄位。資料欄位與操作方式以 `小書樓操作說明.md` 及後端 `docs/Phase 8 關聯式內容目錄與權限模型計畫書.md` 為準。
 
 ---
 
