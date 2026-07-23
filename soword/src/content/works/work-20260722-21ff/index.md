@@ -6,7 +6,7 @@ status: "draft"
 summary: "「我不是救世主，我只是剛好站在這裡。」"
 featured: false
 publishedAt: 2026-07-22
-updatedAt: 2026-07-22
+updatedAt: 2026-07-23
 ---
 主角：朝倉 朔
 
@@ -103,3 +103,4 @@ updatedAt: 2026-07-22
 「因為如果我因為救不了全部的人，就選擇不救任何人。」
 
 「那我跟你又有什麼不同？」
+
