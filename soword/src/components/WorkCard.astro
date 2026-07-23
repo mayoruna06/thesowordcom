@@ -1,6 +1,6 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { normalizeTags, tagHref } from '../tags';
+import { tagEntries, tagHref } from '../tags';
 
 const base = import.meta.env.BASE_URL;
 
@@ -15,7 +15,7 @@ const { title, subtitle, author, authorSlug, cover, status, tags } = work.data;
 const workHref = `${base}works/${work.slug}/`;
 const authorHref = authorSlug ? `${base}authors/${authorSlug}/` : null;
 
-const primaryTag = normalizeTags(tags)[0];
+const primaryTag = tagEntries(work.data)[0];
 const badgeClass = isNew ? 'badge-new' : status === 'ongoing' ? 'badge-ongoing' : status === 'hiatus' ? 'badge-hiatus' : 'badge-end';
 const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status === 'hiatus' ? '暫停' : '完結';
 ---
@@ -44,7 +44,7 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
       {primaryTag && (
         <>
           <span>・</span>
-          <a class="tag-link" href={tagHref(base, primaryTag)}>{primaryTag}</a>
+          <a class="tag-link" href={tagHref(base, primaryTag.key)}>{primaryTag.label}</a>
         </>
       )}
     </div>

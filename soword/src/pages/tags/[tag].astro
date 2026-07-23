@@ -5,10 +5,11 @@ import Footer from '@components/Footer.astro';
 import WorkCard from '@components/WorkCard.astro';
 import type { CollectionEntry } from 'astro:content';
 import { getCollection } from 'astro:content';
-import { collectTagStats, normalizeTags, tagHref, tagKey, type TagStat } from '../../tags';
+import { collectTagStats, tagEntries, tagHref, type TagStat } from '../../tags';
 
 interface Props {
   tag: string;
+  currentTag: string;
   works: CollectionEntry<'works'>[];
   chapterCountByWork: Record<string, number>;
   allTags: TagStat[];
@@ -24,14 +25,15 @@ export async function getStaticPaths() {
     counts[chapter.data.work] = (counts[chapter.data.work] ?? 0) + 1;
     return counts;
   }, {});
-  const allTags = collectTagStats(works.map(work => work.data.tags));
+  const allTags = collectTagStats(works.map(work => work.data));
 
   return allTags.map(tag => ({
     params: { tag: tag.key },
     props: {
       tag: tag.label,
+      currentTag: tag.key,
       works: works
-        .filter(work => normalizeTags(work.data.tags).some(value => tagKey(value) === tag.key))
+        .filter(work => tagEntries(work.data).some(value => value.key === tag.key))
         .sort((a, b) => b.data.publishedAt.getTime() - a.data.publishedAt.getTime()),
       chapterCountByWork,
       allTags,
@@ -39,9 +41,9 @@ export async function getStaticPaths() {
   }));
 }
 
-const { tag, works, chapterCountByWork, allTags } = Astro.props;
+const { tag, currentTag, works, chapterCountByWork, allTags } = Astro.props;
 const base = import.meta.env.BASE_URL;
-const currentKey = tagKey(tag);
+const currentKey = currentTag;
 ---
 
 <BaseLayout title={tag + ' — 標籤分類 — 小書樓'} description={'瀏覽小書樓中標記為「' + tag + '」的作品'}>

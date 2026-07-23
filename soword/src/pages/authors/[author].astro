@@ -15,7 +15,10 @@ export async function getStaticPaths() {
     params: { author: author.slug },
     props: {
       author,
-      works: works.filter(work => work.data.authorSlug === author.slug),
+      works: works.filter(work =>
+        author.data.profileId && work.data.authorProfileId
+          ? work.data.authorProfileId === author.data.profileId
+          : work.data.authorSlug === author.slug),
     },
   }));
 }

@@ -1,7 +1,15 @@
-export interface TagStat {
+export interface TagEntry {
   key: string;
   label: string;
+}
+
+export interface TagStat extends TagEntry {
   count: number;
+}
+
+export interface TagSource {
+  tags: readonly unknown[];
+  tagSlugs?: readonly unknown[];
 }
 
 export function normalizeTag(value: unknown): string {
@@ -27,15 +35,30 @@ export function normalizeTags(values: readonly unknown[] = []): string[] {
   return result;
 }
 
-export function collectTagStats(tagGroups: Iterable<readonly unknown[]>): TagStat[] {
+export function tagEntries(source: TagSource): TagEntry[] {
+  const seen = new Set<string>();
+  const result: TagEntry[] = [];
+  const slugs = Array.isArray(source.tagSlugs) ? source.tagSlugs : [];
+
+  source.tags.forEach((value, index) => {
+    const label = normalizeTag(value);
+    const key = tagKey(slugs[index] || label);
+    if (!label || !key || seen.has(key)) return;
+    seen.add(key);
+    result.push({ key, label });
+  });
+
+  return result;
+}
+
+export function collectTagStats(sources: Iterable<TagSource>): TagStat[] {
   const stats = new Map<string, TagStat>();
 
-  for (const tags of tagGroups) {
-    for (const label of normalizeTags(tags)) {
-      const key = tagKey(label);
-      const current = stats.get(key);
+  for (const source of sources) {
+    for (const tag of tagEntries(source)) {
+      const current = stats.get(tag.key);
       if (current) current.count += 1;
-      else stats.set(key, { key, label, count: 1 });
+      else stats.set(tag.key, { ...tag, count: 1 });
     }
   }
 
