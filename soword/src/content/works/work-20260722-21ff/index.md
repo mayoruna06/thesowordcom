@@ -1,12 +1,15 @@
 ---
 title: "《只要還有人需要》"
-author: "勒索沃德"
+author: "燈釋"
 genre: "other"
 status: "draft"
 summary: "「我不是救世主，我只是剛好站在這裡。」"
 featured: false
 publishedAt: 2026-07-22
 updatedAt: 2026-07-23
+workId: "07ffa7e2-8322-4eb0-a27b-a4df8737f0d3"
+authorProfileId: "3fdb050f-9de9-497d-8c5e-8efa41004b26"
+authorSlug: "dengshi"
 ---
 主角：朝倉 朔
 
@@ -103,5 +106,3 @@ updatedAt: 2026-07-23
 「因為如果我因為救不了全部的人，就選擇不救任何人。」
 
 「那我跟你又有什麼不同？」
-
-

@@ -19,6 +19,18 @@ contentWarning:
 featured: false
 publishedAt: 2026-06-02
 updatedAt: 2026-07-23
+workId: "ea2c1302-5681-4d03-8146-f58cce87ab34"
+authorProfileId: "12ad103b-15af-4044-acdc-062d98821b2c"
+authorSlug: "mamuxiaoya"
+tagSlugs:
+  - "地下城"
+  - "退隊流"
+  - "劍與魔法"
+  - "劍聖"
+  - "最強主角"
+  - "隊伍成長"
+  - "後宮"
+  - "歡樂爽文"
 ---
 ## 關於這部作品
 
@@ -43,6 +55,3 @@ updatedAt: 2026-07-23
 五人將一路挑戰百層地下城，也逐漸揭開地下城、神劍與魔氣本源的真正關係。
 
 只是賽維爾很快就會知道——能看穿所有戰鬥破綻的眼睛，並不能告訴他今晚該選擇哪一位姑娘。
-
-
-

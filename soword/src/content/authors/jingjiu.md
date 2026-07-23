@@ -1,5 +1,4 @@
 ---
 displayName: "靖玖"
-avatar: ""
-bio: ""
+profileId: "011bb687-9612-4e33-8c8e-9bccf51c4188"
 ---

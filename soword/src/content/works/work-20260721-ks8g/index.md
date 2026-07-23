@@ -1,7 +1,7 @@
 ---
 title: "未知樂園"
-author: "會員制餐廳"
-authorSlug: huiyuanzhicanting
+author: "屎仙嘗鮮"
+authorSlug: "huiyuanzhicanting"
 genre: "other"
 status: "ongoing"
 summary: "或許也沒有人知道世界上有這一個地方，是僅屬於他們的樂園。"
@@ -18,6 +18,14 @@ contentWarning:
   - "互攻"
 featured: false
 publishedAt: 2026-07-21
+workId: "4b9d1d63-bd3c-4569-9e39-e4ad9a57f5b1"
+authorProfileId: "09b6bfae-9d75-44eb-ae31-8ecf643549a7"
+tagSlugs:
+  - "限制級"
+  - "bdsm"
+  - "多p"
+  - "耽美"
+  - "肉文"
 ---
 或許也沒有人知道世界上有這一個地方，是僅屬於他們的樂園。
 

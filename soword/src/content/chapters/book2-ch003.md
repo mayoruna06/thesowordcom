@@ -4,6 +4,8 @@ work: "book2"
 chapter: 3
 publishedAt: 2026-07-21
 wordCount: 4060
+chapterId: "0abb240f-a410-4f5e-a9da-5ab7e2e31ec0"
+workId: "ea2c1302-5681-4d03-8146-f58cce87ab34"
 ---
 霍格藍・貝爾薩第一次見到賽維爾時，那孩子才五歲。
 
@@ -480,5 +482,3 @@ wordCount: 4060
 賽維爾的拇指抵住劍格。
 
 四年來，他第一次將劍刃推出鞘口。
-
-
