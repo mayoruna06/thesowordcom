@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 52" role="img" aria-labelledby="title desc">
+  <title id="title">小書樓 Logo</title>
+  <desc id="desc">一本打開的書與一片葉子</desc>
+  <path d="M8 14c10-3 18-1 24 5v25c-7-5-15-6-24-3V14Z" fill="#e7f5ef" stroke="#335a68" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M56 14c-10-3-18-1-24 5v25c7-5 15-6 24-3V14Z" fill="#d9f1e8" stroke="#335a68" stroke-width="2" stroke-linejoin="round"/>
+  <path d="M32 19v25" stroke="#12a58b" stroke-width="2" stroke-linecap="round"/>
+  <path d="M43 18c1-8 6-12 12-14-1 7-4 12-10 15" fill="#65d7bf" stroke="#335a68" stroke-width="1.7" stroke-linejoin="round"/>
+  <path d="M49 16c2-3 4-6 6-10" stroke="#335a68" stroke-width="1.4" stroke-linecap="round"/>
+  <path d="M10 44c8-3 15-2 22 1 7-3 14-4 22-1" fill="none" stroke="#12a58b" stroke-width="2" stroke-linecap="round"/>
+</svg>

@@ -3,161 +3,64 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
 import WorkCard from '@components/WorkCard.astro';
-import Sidebar from '@components/Sidebar.astro';
 import { getCollection } from 'astro:content';
 
+const base = import.meta.env.BASE_URL;
 const allWorks = await getCollection('works', ({ data }) => data.status !== 'draft');
 const allChapters = await getCollection('chapters');
-const announcements = await getCollection('announcements').then(a =>
-  a.sort((x, y) => Number(y.data.pinned) - Number(x.data.pinned)
-    || y.data.publishedAt.getTime() - x.data.publishedAt.getTime())
-);
-const pinnedAnnouncements = announcements.filter(a => a.data.pinned);
-
-const chapterCountByWork = allChapters.reduce<Record<string, number>>((acc, ch) => {
-  acc[ch.data.work] = (acc[ch.data.work] ?? 0) + 1;
-  return acc;
-}, {});
-
-// 30 天內發布 = NEW
-const thirtyDaysAgo = new Date(Date.now() - 30 * 86400_000);
-const isNew = (w: typeof allWorks[0]) => w.data.publishedAt > thirtyDaysAgo;
-
-const ongoingWorks  = allWorks.filter(w => w.data.status === 'ongoing' || w.data.status === 'hiatus');
+const chapterCountByWork = allChapters.reduce<Record<string, number>>((acc, ch) => { acc[ch.data.work] = (acc[ch.data.work] ?? 0) + 1; return acc; }, {});
+const latestDate = (w: typeof allWorks[0]) => w.data.updatedAt ?? w.data.publishedAt;
+const isNew = (w: typeof allWorks[0]) => latestDate(w).getTime() > Date.now() - 30 * 86400_000;
+const ongoingWorks = allWorks.filter(w => w.data.status === 'ongoing' || w.data.status === 'hiatus');
 const completedWorks = allWorks.filter(w => w.data.status === 'completed');
+const latestWorks = [...allWorks].sort((a, b) => latestDate(b).getTime() - latestDate(a).getTime()).slice(0, 4);
+const randomWorkUrls = allWorks.map(work => `${base}works/${work.slug}/`);
 ---
 
 <BaseLayout title="小書樓">
   <Header slot="header" />
   <Footer slot="footer" />
 
-  <!-- Hero Banner -->
-  <div class="hero">
-    <div class="hero-title">Novel Library</div>
-    <div class="hero-h1">以文字為橋<br>過橋踢</div>
-    <div class="hero-sub">想到就更，目前還再想</div>
-  </div>
-
-  {pinnedAnnouncements.length > 0 && (
-    <div class="container pinned-wrap">
-      {pinnedAnnouncements.map(ann => (
-        <a class="pinned-announcement" href={`${import.meta.env.BASE_URL}announcements/${ann.slug}/`}>
-          <span class="pinned-label">置頂公告</span>
-          <span class="pinned-title">{ann.data.title}</span>
-          <span class="pinned-arrow">閱讀 →</span>
-        </a>
-      ))}
+  <section class="home-hero" aria-labelledby="home-title">
+    <div class="home-hero-inner container">
+      <div class="hero-copy">
+        <h1 id="home-title">下個世界，可能，也許在這裡</h1>
+        <p class="hero-lead">在小書樓，收藏正在發生的故事，也慢慢找到屬於你的下一本小說。</p>
+        <div class="hero-actions">
+          <a class="hero-primary" id="random-work" data-work-urls={JSON.stringify(randomWorkUrls)} href={randomWorkUrls[0] ?? `${base}search/`}>隨機推薦一本書 <span>↗</span></a>
+          <a class="hero-secondary" href={`${base}tags/`}>查看標籤分類</a>
+        </div>
+      </div>
+      <div class="hero-image"><img src={`${base}images/hero-editorial.png`} alt="打開的書本、薄荷書籤與午後閱讀桌面" /></div>
+        <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
+      </div>
     </div>
-  )}
+  </section>
 
-  <div class="container">
-    {allWorks.length === 0
-      ? (
-        <div class="empty-state">
-          <div class="empty-icon">📚</div>
-          <p>作品即將到來，敬請期待</p>
-        </div>
-      )
-      : (
-        <div class="layout">
-          <main>
-            {ongoingWorks.length > 0 && (
-              <div class="section-wrap">
-                <div class="section-title">連載中</div>
-                <div class="novel-grid">
-                  {ongoingWorks.map(w => (
-                    <WorkCard work={w} chapterCount={chapterCountByWork[w.slug] ?? 0} isNew={isNew(w)} />
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {completedWorks.length > 0 && (
-              <div class="section-wrap">
-                <div class="section-title">已完結</div>
-                <div class="novel-grid">
-                  {completedWorks.map(w => (
-                    <WorkCard work={w} chapterCount={chapterCountByWork[w.slug] ?? 0} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </main>
-
-          <Sidebar
-            works={allWorks}
-            chapterCountByWork={chapterCountByWork}
-            announcements={announcements}
-          />
-        </div>
-      )
+  <script is:inline>
+    const randomWorkLink = document.querySelector("#random-work");
+    if (randomWorkLink) {
+      const workUrls = JSON.parse(randomWorkLink.getAttribute("data-work-urls") || "[]");
+      randomWorkLink.addEventListener("click", () => {
+        if (workUrls.length > 0) randomWorkLink.setAttribute("href", workUrls[Math.floor(Math.random() * workUrls.length)]);
+      });
     }
-  </div>
+  </script>
+
+  <main class="container home-content">
+    <section class="section-block" id="latest" aria-labelledby="latest-title">
+      <div class="section-heading"><h2 id="latest-title">最新更新</h2></div>
+      <div class="novel-grid">{latestWorks.map(w => <WorkCard work={w} chapterCount={chapterCountByWork[w.slug] ?? 0} isNew={isNew(w)} />)}</div>
+    </section>
+
+
+    <section class="section-block" id="all-works" aria-labelledby="all-works-title">
+      <div class="section-heading"><div><h2 id="all-works-title">作品書架</h2></div></div>
+      <div class="library-main">
+        {ongoingWorks.length > 0 && <div class="library-section"><h3>正在連載 <span>{ongoingWorks.length}</span></h3><div class="novel-grid">{ongoingWorks.map(w => <WorkCard work={w} chapterCount={chapterCountByWork[w.slug] ?? 0} isNew={isNew(w)} />)}</div></div>}
+        {completedWorks.length > 0 && <div class="library-section"><h3>已經完結 <span>{completedWorks.length}</span></h3><div class="novel-grid">{completedWorks.map(w => <WorkCard work={w} chapterCount={chapterCountByWork[w.slug] ?? 0} />)}</div></div>}
+      </div>
+    </section>
+
+  </main>
 </BaseLayout>
-
-<style>
-  /* ── Hero ── */
-  .hero {
-    background: linear-gradient(135deg, #2c2520 0%, #4a3d30 60%, #6b5740 100%);
-    padding: 60px 40px;
-    text-align: center;
-    position: relative;
-    overflow: hidden;
-  }
-  .hero::before {
-    content: '';
-    position: absolute; inset: 0;
-    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    pointer-events: none;
-  }
-  .hero-title {
-    font-family: var(--font-deco);
-    font-style: italic;
-    font-size: 13px;
-    color: var(--accent2);
-    letter-spacing: 0.3em;
-    text-transform: uppercase;
-    margin-bottom: 12px;
-    position: relative;
-  }
-  .hero-h1 {
-    font-family: var(--font-serif);
-    font-size: 36px;
-    font-weight: 300;
-    color: #f0ebe3;
-    letter-spacing: 0.15em;
-    line-height: 1.4;
-    position: relative;
-  }
-  .hero-sub {
-    margin-top: 16px;
-    font-size: 13px;
-    color: rgba(240,235,227,0.5);
-    letter-spacing: 0.1em;
-    position: relative;
-  }
-
-
-  .pinned-wrap { padding-top: 24px; }
-  .pinned-announcement { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 14px; padding: 14px 18px; margin-bottom: 10px; border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line)); border-radius: 6px; background: var(--warm); color: var(--ink); text-decoration: none; }
-  .pinned-announcement:hover { border-color: var(--accent); text-decoration: none; color: var(--ink); }
-  .pinned-label { color: var(--accent); font-size: 11px; letter-spacing: 0.12em; white-space: nowrap; }
-  .pinned-title { font-family: var(--font-serif); font-size: 14px; }
-  .pinned-arrow { color: var(--ink3); font-size: 12px; white-space: nowrap; }
-  /* ── 空狀態 ── */
-  .empty-state {
-    text-align: center;
-    padding: 100px 0;
-    color: var(--ink3);
-  }
-  .empty-icon { font-size: 3rem; margin-bottom: 16px; }
-  .empty-state p { font-size: 15px; letter-spacing: 0.08em; }
-
-  @media (max-width: 768px) {
-    .hero { padding: 40px 20px; }
-    .hero-h1 { font-size: 28px; }
-    .pinned-announcement { grid-template-columns: 1fr auto; }
-    .pinned-label { grid-column: 1 / -1; }
-    .pinned-wrap { padding-top: 16px; }
-  }
-</style>
