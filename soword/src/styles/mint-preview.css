@@ -225,3 +225,82 @@ nav a:hover, nav a.active { color: var(--accent) !important; }
 /* Keep the selected hero line on one row */
 .home-hero h1 { white-space: nowrap; font-size: clamp(28px, 3.8vw, 52px) !important; }
 @media (max-width: 640px) { .home-hero h1 { font-size: clamp(22px, 7vw, 32px) !important; } }
+/* Hero actions: quiet book-label treatment */
+.hero-actions { gap: 14px; }
+.hero-primary, .hero-secondary { min-height: 46px; padding: 12px 19px; border-radius: 14px; letter-spacing: .05em; box-sizing: border-box; }
+.hero-primary { color: #fff !important; background: linear-gradient(135deg, #0fa58d, #168f82) !important; border: 1px solid rgba(8,119,103,.3); box-shadow: 0 9px 18px rgba(18,129,111,.16), inset 0 1px 0 rgba(255,255,255,.22); }
+.hero-primary span { display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 1px solid rgba(255,255,255,.55); border-radius: 50%; font-size: 12px; }
+.hero-secondary { color: var(--bluegray) !important; background: rgba(255,255,255,.34); border: 1px solid rgba(41,116,121,.24) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,.56); }
+.hero-primary:hover, .hero-secondary:hover { transform: translateY(-3px); }
+.hero-primary:hover { background: linear-gradient(135deg, #0b927d, #11776f) !important; box-shadow: 0 12px 22px rgba(18,129,111,.22), inset 0 1px 0 rgba(255,255,255,.24); }
+.hero-secondary:hover { color: var(--accent) !important; background: rgba(255,255,255,.72); border-color: rgba(18,165,139,.48) !important; }
+@media (max-width: 480px) { .hero-primary, .hero-secondary { min-height: 42px; padding: 10px 14px; font-size: 13px; } }
+/* Hero actions as illustrated reading cards */
+.hero-actions { display: grid; grid-template-columns: repeat(2, minmax(190px, 1fr)); gap: 12px; max-width: 500px; }
+.hero-action-card { position: relative; min-height: 82px; padding: 10px 34px 10px 10px; display: flex; align-items: center; gap: 12px; border-radius: 16px; box-sizing: border-box; text-decoration: none; transition: transform .22s ease, box-shadow .22s ease, background .22s ease; }
+.hero-action-art { width: 60px; height: 60px; flex: 0 0 60px; object-fit: cover; border-radius: 12px; mix-blend-mode: multiply; opacity: .82; filter: saturate(.78) contrast(.96); }
+.hero-action-copy { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+.hero-action-copy strong { font-size: 14px; line-height: 1.35; letter-spacing: .04em; white-space: nowrap; }
+.hero-action-copy small { font-size: 11px; font-weight: 500; letter-spacing: .08em; opacity: .72; white-space: nowrap; }
+.hero-action-arrow { position: absolute; right: 13px; top: 12px; display: grid; place-items: center; width: 20px; height: 20px; border: 1px solid currentColor; border-radius: 50%; font-size: 11px; }
+.hero-primary.hero-action-card { color: #fff !important; background: rgba(15,154,132,.9) !important; border: 1px solid rgba(9,119,104,.34); box-shadow: 0 10px 20px rgba(18,129,111,.14); }
+.hero-secondary.hero-action-card { color: var(--bluegray) !important; background: rgba(255,255,255,.42); border: 1px solid rgba(41,116,121,.22) !important; box-shadow: 0 8px 18px rgba(29,125,111,.06); }
+.hero-action-card:hover { transform: translateY(-4px); }
+.hero-primary.hero-action-card:hover { background: rgba(11,132,114,.96) !important; box-shadow: 0 14px 24px rgba(18,129,111,.2); }
+.hero-secondary.hero-action-card:hover { background: rgba(255,255,255,.72); border-color: rgba(18,165,139,.46) !important; }
+@media (max-width: 640px) { .hero-actions { grid-template-columns: 1fr 1fr; gap: 9px; max-width: none; }.hero-action-card { min-height: 76px; padding-right: 28px; gap: 8px; }.hero-action-art { width: 48px; height: 48px; flex-basis: 48px; }.hero-action-copy strong { font-size: 12px; }.hero-action-copy small { font-size: 10px; }.hero-action-arrow { right: 8px; top: 8px; } }
+.hero-primary .hero-action-copy { display: flex; align-items: flex-start; width: auto; height: auto; border: 0; border-radius: 0; }
+.hero-primary .hero-action-arrow { display: grid; width: 20px; height: 20px; border: 1px solid currentColor; border-radius: 50%; }
+/* Bamboo and lantern accents belong to the content-side whitespace, not the hero */
+.home-content { position: relative; }
+.home-content::before, .home-content::after { content: ""; position: absolute; top: 24px; width: 540px; height: 980px; background: url("/soword/images/hero-bamboo-lantern-edge.png") center / 100% 100% no-repeat; opacity: .88; mix-blend-mode: multiply; pointer-events: none; z-index: 0; }
+.home-content::before { left: -500px; transform: scaleX(-1) rotate(-3deg); }
+.home-content::after { right: -500px; transform: rotate(3deg); opacity: .78; }
+.home-content > * { position: relative; z-index: 1; }
+@media (max-width: 1280px) { .home-content::before, .home-content::after { width: 390px; height: 760px; }.home-content::before { left: -300px; }.home-content::after { right: -300px; } }
+@media (max-width: 900px) { .home-content::before, .home-content::after { width: 250px; height: 560px; opacity: .7; }.home-content::before { left: -185px; }.home-content::after { right: -185px; } }
+@media (max-width: 640px) { .home-content::before, .home-content::after { display: none; } }
+/* Separate side illustrations fill only the hero margins. They sit behind the
+   centered hero content and never participate in the content section below. */
+.home-hero { position: relative; isolation: isolate; overflow: hidden; }
+.hero-side-art {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  z-index: 0;
+  width: max(0px, calc((100vw - var(--max-w)) / 2 + 12px));
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+  opacity: .94;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+.hero-side-left { left: 0; }
+.hero-side-right { right: 0; }
+.home-hero-inner { position: relative; z-index: 1; }
+@media (max-width: 1280px) {
+  .hero-side-art { width: 25vw; opacity: .88; }
+}
+@media (max-width: 900px) {
+  .hero-side-art { width: 22vw; opacity: .72; }
+}
+@media (max-width: 640px) {
+  .hero-side-art { width: 18vw; opacity: .42; }
+}
+/* Soften the join between each side illustration and the unchanged central scene. */
+.hero-side-art {
+  filter: saturate(.82) contrast(.94) brightness(1.04);
+}
+.hero-side-left {
+  -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(90deg, #000 0%, #000 58%, transparent 100%);
+}
+.hero-side-right {
+  -webkit-mask-image: linear-gradient(270deg, #000 0%, #000 58%, transparent 100%);
+  mask-image: linear-gradient(270deg, #000 0%, #000 58%, transparent 100%);
+}
+@media (max-width: 900px) {
+  .hero-side-left { -webkit-mask-image: linear-gradient(90deg, #000 0%, #000 46%, transparent 100%); mask-image: linear-gradient(90deg, #000 0%, #000 46%, transparent 100%); }
+  .hero-side-right { -webkit-mask-image: linear-gradient(270deg, #000 0%, #000 46%, transparent 100%); mask-image: linear-gradient(270deg, #000 0%, #000 46%, transparent 100%); }
+}
