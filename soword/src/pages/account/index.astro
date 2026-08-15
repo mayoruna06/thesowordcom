@@ -60,7 +60,11 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
       <div class="card">
         <div class="me-row">
           <div class="me-id">
-            <span class="avatar-lg" id="me-avatar"></span>
+            <button id="btn-avatar-picker" class="avatar-trigger" type="button"
+              aria-label="更換頭像" aria-haspopup="dialog" aria-controls="avatar-dialog">
+              <span class="avatar-lg" id="me-avatar" aria-hidden="true"></span>
+              <span class="avatar-edit-mark" aria-hidden="true">✎</span>
+            </button>
             <div>
               <div class="me-name-line">
                 <span id="me-name"></span>
@@ -73,12 +77,21 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
         </div>
       </div>
 
+      <dialog id="avatar-dialog" class="avatar-dialog" aria-labelledby="avatar-dialog-title">
+        <div class="avatar-dialog-head">
+          <div>
+            <h3 id="avatar-dialog-title">選擇頭像</h3>
+            <p>點一下套用預覽，儲存個人資料後才會正式更新。</p>
+          </div>
+          <button id="btn-close-avatar" class="avatar-dialog-close" type="button" aria-label="關閉頭像選擇">×</button>
+        </div>
+        <div class="avatar-picker" id="pf-avatars" role="group" aria-label="可選頭像"></div>
+      </dialog>
+
       <div class="card" id="profile">
         <h3>個人資料</h3>
         <label for="pf-name">暱稱</label>
         <input id="pf-name" maxlength="30" />
-        <label>頭像</label>
-        <div class="avatar-picker" id="pf-avatars"></div>
         <label for="pf-bio">個人簡介（200 字以內，選填）</label>
         <textarea id="pf-bio" maxlength="200" rows="3" placeholder="介紹一下自己，或寫下最近在看的書"></textarea>
         <div id="author-message-field" style="display:none">
@@ -264,9 +277,21 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
         pickedAvatar = b.dataset.value || '';
         paintAvatar(pickedAvatar, ($('pf-name') as HTMLInputElement).value);
         renderAvatarPicker();
+        $('pf-status').textContent = '已選擇新頭像，請按儲存';
+        ($('avatar-dialog') as HTMLDialogElement).close();
       };
     });
   }
+
+  const avatarDialog = $('avatar-dialog') as HTMLDialogElement;
+  $('btn-avatar-picker').onclick = () => {
+    renderAvatarPicker();
+    avatarDialog.showModal();
+  };
+  $('btn-close-avatar').onclick = () => avatarDialog.close();
+  avatarDialog.addEventListener('click', (event) => {
+    if (event.target === avatarDialog) avatarDialog.close();
+  });
 
   $('pf-name').addEventListener('input', () => {
     // 沒挑頭像時，首字頭像要跟著暱稱變動
@@ -371,7 +396,65 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
     font-size: 22px;
   }
 
-  .avatar-picker { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .avatar-trigger {
+    position: relative;
+    display: block;
+    padding: 2px;
+    border: 0;
+    border-radius: 50%;
+    background: transparent;
+    color: inherit;
+    cursor: pointer;
+  }
+  .avatar-trigger:hover .avatar-lg,
+  .avatar-trigger:focus-visible .avatar-lg { border-color: var(--accent2); }
+  .avatar-trigger:focus-visible { outline: 2px solid var(--accent2); outline-offset: 3px; }
+  .avatar-edit-mark {
+    position: absolute;
+    right: -2px;
+    bottom: -2px;
+    width: 18px;
+    height: 18px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--white);
+    color: var(--accent);
+    font-size: 11px;
+    line-height: 16px;
+    text-align: center;
+  }
+
+  .avatar-dialog {
+    box-sizing: border-box;
+    width: min(360px, calc(100vw - 32px));
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--white);
+    color: var(--ink);
+    box-shadow: 0 18px 60px rgba(19, 68, 64, .18);
+  }
+  .avatar-dialog::backdrop { background: rgba(17, 45, 43, .32); backdrop-filter: blur(2px); }
+  .avatar-dialog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 16px; }
+  .avatar-dialog-head h3 { margin: 0 0 4px; }
+  .avatar-dialog-head p { margin: 0; color: var(--ink3); font-size: 12px; line-height: 1.6; }
+  .avatar-dialog-close {
+    flex: 0 0 auto;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--bg);
+    color: var(--ink2);
+    cursor: pointer;
+    font: inherit;
+    font-size: 20px;
+    line-height: 1;
+  }
+  .avatar-dialog-close:hover { border-color: var(--accent2); color: var(--accent); }
+
+  .avatar-picker { display: grid; grid-template-columns: repeat(auto-fit, 40px); justify-content: center; gap: 8px; }
   .avatar-opt {
     width: 40px; height: 40px;
     border: 1px solid var(--line);
