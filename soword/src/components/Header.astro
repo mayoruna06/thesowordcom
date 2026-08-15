@@ -14,7 +14,7 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
     <a href={base} class:list={{ active: isHome }}>首頁</a>
     <a href={`${base}#categories`}>分類</a>
     <a href={`${base}#latest`}>最新更新</a>
-    <a href={`${base}account/#bookmarks`}>我的書架</a>
+    <a href={`${base}account/#library`}>我的書架</a>
     <a href={`${base}announcements/`} class:list={{ active: isAnnouncements }}>公告</a>
     <a href={`${base}account/`} id="nav-login">登入</a>
   </nav>
@@ -35,7 +35,7 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
       <div class="usermenu-list" id="usermenu-list" hidden>
         <div class="usermenu-head"><span id="usermenu-name"></span></div>
         <a href={`${base}account/#profile`}>個人資料</a>
-        <a href={`${base}account/#bookmarks`}>我的收藏</a>
+        <a href={`${base}account/#library`}>我的書架</a>
         <a id="admin-menu-link" href="#" hidden>前往後台</a>
         <button type="button" id="btn-logout-menu">登出</button>
       </div>
