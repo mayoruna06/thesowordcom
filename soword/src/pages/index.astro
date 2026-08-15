@@ -8,6 +8,11 @@ import { getCollection } from 'astro:content';
 const base = import.meta.env.BASE_URL;
 const allWorks = await getCollection('works', ({ data }) => data.status !== 'draft');
 const allChapters = await getCollection('chapters');
+const announcements = await getCollection('announcements').then(items =>
+  items.sort((a, b) => Number(b.data.pinned) - Number(a.data.pinned)
+    || b.data.publishedAt.getTime() - a.data.publishedAt.getTime())
+);
+const pinnedAnnouncements = announcements.filter(announcement => announcement.data.pinned);
 const chapterCountByWork = allChapters.reduce<Record<string, number>>((acc, ch) => { acc[ch.data.work] = (acc[ch.data.work] ?? 0) + 1; return acc; }, {});
 const latestDate = (w: typeof allWorks[0]) => w.data.updatedAt ?? w.data.publishedAt;
 const isNew = (w: typeof allWorks[0]) => latestDate(w).getTime() > Date.now() - 30 * 86400_000;
@@ -36,6 +41,20 @@ const randomWorkUrls = allWorks.map(work => `${base}works/${work.slug}/`);
     </div>
   </section>
 
+  {pinnedAnnouncements.length > 0 && (
+    <div class="pinned-wrap container" aria-label="置頂公告">
+      {pinnedAnnouncements.map(announcement => (
+        <a class="pinned-announcement" href={`${base}announcements/${announcement.slug}/`}>
+          <img class="announcement-art" src={`${base}images/announcement-scroll.png`} alt="" aria-hidden="true" />
+          <span class="pinned-copy">
+            <span class="pinned-label">置頂公告</span>
+            <span class="pinned-title">{announcement.data.title}</span>
+          </span>
+          <span class="pinned-arrow">閱讀 →</span>
+        </a>
+      ))}
+    </div>
+  )}
   <script is:inline>
     const randomWorkLink = document.querySelector("#random-work");
     if (randomWorkLink) {
@@ -63,3 +82,6 @@ const randomWorkUrls = allWorks.map(work => `${base}works/${work.slug}/`);
 
   </main>
 </BaseLayout>
+
+
+
