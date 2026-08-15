@@ -316,6 +316,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
         author_message: ($('pf-author-message') as HTMLTextAreaElement).value,
       });
       fillProfile({ ...saved, email: $('me-email').textContent });
+      window.dispatchEvent(new CustomEvent('soword-member-updated', { detail: saved }));
       $('pf-status').textContent = saved.public_profile_published
         ? '已儲存，公開作者頁正在部署'
         : '已儲存';
