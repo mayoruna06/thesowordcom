@@ -38,7 +38,7 @@ const face = avatarFace(author.data.avatar, author.data.displayName);
   <main class="author-page container">
     <a class="back" href={import.meta.env.BASE_URL}>← 回到小書樓</a>
     <header class="profile">
-      <div class="avatar" aria-hidden="true" style={`background:${face.tone}`}>{face.text}</div>
+      <div class="avatar" aria-hidden="true" style={`background-color:${face.tone};${face.image ? `background-image:url('${face.image}');background-size:cover;background-position:center;` : ''}`}>{face.text}</div>
       <div>
         <h1>{author.data.displayName}</h1>
         {author.data.bio && <p>{author.data.bio}</p>}

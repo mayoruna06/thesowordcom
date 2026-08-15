@@ -4,7 +4,7 @@ import Footer from '@components/Footer.astro';
 import '../styles/typography.css';
 import type { CollectionEntry } from 'astro:content';
 import { ADMIN_URL } from '../site.config';
-import { PRESET_AVATARS, TONES } from '../avatars';
+import { ALL_AVATARS, TONES } from '../avatars';
 
 const base = import.meta.env.BASE_URL;
 
@@ -224,15 +224,15 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
   }
 </style>
 
-<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug, adminUrl: ADMIN_URL, baseUrl: base, presetAvatars: PRESET_AVATARS, tones: TONES }}>
+<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug, adminUrl: ADMIN_URL, baseUrl: base, presetAvatars: ALL_AVATARS, tones: TONES }}>
   // 這段是 define:vars 內嵌腳本（不是模組，不能 import），
   // 所以頭像資料由上方 frontmatter 傳入，邏輯與 src/avatars.ts 的 avatarFace 相同。
   const commentAvatar = (avatar, displayName) => {
     const key = /^preset:(\w+)$/.exec(avatar || '')?.[1];
     const idx = presetAvatars.findIndex(a => a.key === key);
-    if (idx >= 0) return { text: presetAvatars[idx].emoji, tone: tones[idx % tones.length] };
+    if (idx >= 0) return { text: presetAvatars[idx].emoji || '', image: presetAvatars[idx].image || '', tone: tones[idx % tones.length] };
     const first = [...(displayName || '讀')][0] || '讀';
-    return { text: first, tone: tones[first.charCodeAt(0) % tones.length] };
+    return { text: first, image: '', tone: tones[first.charCodeAt(0) % tones.length] };
   };
 
   // 記憶閱讀進度
@@ -300,7 +300,10 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
       const author = document.createElement('span'); author.className = 'comment-author';
       const face = commentAvatar(row.avatar || '', row.display_name || '讀者');
       const pic = document.createElement('span'); pic.className = 'comment-avatar';
-      pic.textContent = face.text; pic.style.background = face.tone;
+      pic.textContent = face.text; pic.style.backgroundColor = face.tone;
+      pic.style.backgroundImage = face.image ? `url("${face.image}")` : '';
+      pic.style.backgroundSize = face.image ? 'cover' : '';
+      pic.style.backgroundPosition = face.image ? 'center' : '';
       author.append(pic, document.createTextNode(row.display_name || '讀者'));
       const time = document.createElement('time'); time.dateTime = row.created_at;
       time.textContent = new Date(row.created_at).toLocaleString('zh-TW');

@@ -236,7 +236,10 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
     const face = avatarFace(avatar, name);
     const el = $('me-avatar');
     el.textContent = face.text;
-    el.style.background = face.tone;
+    el.style.backgroundColor = face.tone;
+    el.style.backgroundImage = face.image ? `url("${face.image}")` : '';
+    el.style.backgroundSize = face.image ? 'cover' : '';
+    el.style.backgroundPosition = face.image ? 'center' : '';
   }
 
   function fillProfile(me: any) {
@@ -270,7 +273,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
       const face = avatarFace(value, name);
       return `<button type="button" class="avatar-opt${value === pickedAvatar ? ' is-picked' : ''}"
         data-value="${value}" title="${o.label}" aria-label="${o.label}"
-        style="background:${face.tone}">${face.text}</button>`;
+        style="background-color:${face.tone}${face.image ? `;background-image:url('${face.image}');background-size:cover;background-position:center` : ''}">${face.text}</button>`;
     }).join('');
     $('pf-avatars').querySelectorAll<HTMLButtonElement>('.avatar-opt').forEach(b => {
       b.onclick = () => {
