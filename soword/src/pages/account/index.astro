@@ -433,10 +433,11 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    width: min(960px, calc(100vw - 48px));
-    max-height: calc(100dvh - 48px);
+    width: min(1200px, calc(100vw - 32px));
+    height: min(720px, calc(100dvh - 32px));
+    max-height: calc(100dvh - 32px);
     margin: 0;
-    padding: 32px;
+    padding: 40px;
     overflow-y: auto;
     border: 1px solid var(--line);
     border-radius: 18px;
@@ -466,16 +467,15 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
 
   .avatar-picker {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
     justify-content: center;
     gap: 18px;
   }
-  .avatar-opt {
+  :global(.avatar-opt) {
     box-sizing: border-box;
     width: 100% !important;
-    max-width: 140px;
-    height: auto !important;
-    aspect-ratio: 1;
+    max-width: 160px;
+    height: 160px !important;
     justify-self: center;
     border: 1px solid var(--line);
     border-radius: 50%;
@@ -485,17 +485,19 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
     padding: 0;
     transition: border-color var(--transition), transform var(--transition), box-shadow var(--transition);
   }
-  .avatar-opt:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(19, 68, 64, .16); }
-  .avatar-opt.is-picked { border-color: var(--accent2); border-width: 3px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent2) 18%, transparent); }
+  :global(.avatar-opt:hover) { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(19, 68, 64, .16); }
+  :global(.avatar-opt.is-picked) { border-color: var(--accent2); border-width: 3px; box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent2) 18%, transparent); }
 
   @media (max-width: 640px) {
     .avatar-dialog {
       width: calc(100vw - 24px);
+      height: calc(100dvh - 24px);
       max-height: calc(100dvh - 24px);
       padding: 20px;
     }
     .avatar-dialog-head { margin-bottom: 20px; }
-    .avatar-picker { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 12px; }
+    .avatar-picker { grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 12px; }
+    :global(.avatar-opt) { max-width: 110px; height: 110px !important; }
   }
 
   .pf-foot { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 14px; }
