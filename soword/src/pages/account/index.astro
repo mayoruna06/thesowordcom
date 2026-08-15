@@ -2,13 +2,6 @@
 import BaseLayout from '@layouts/BaseLayout.astro';
 import Header from '@components/Header.astro';
 import Footer from '@components/Footer.astro';
-import { getCollection } from 'astro:content';
-
-// 供「我的書架」把 slug 對回書名/章節名（靜態建置時生成對照表）
-const works = await getCollection('works');
-const chapters = await getCollection('chapters');
-const workTitles: Record<string, string> = Object.fromEntries(works.map(w => [w.slug, w.data.title]));
-const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c => [c.slug, c.data.title]));
 ---
 
 <BaseLayout title="會員中心 — 小書樓" description="小書樓會員中心">
@@ -107,24 +100,9 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
           <button id="btn-save-profile" class="btn-primary">儲存</button>
         </div>
       </div>
-      <div class="card library-card" id="library">
-        <h3>我的書架</h3>
-        <section class="library-group" aria-labelledby="reading-progress-title">
-          <h4 id="reading-progress-title">閱讀進度 <span>讀到哪，接著讀</span></h4>
-          <div id="shelf"><p class="muted">載入中…</p></div>
-        </section>
-        <section class="library-group" aria-labelledby="bookmarks">
-          <h4 id="bookmarks">收藏作品</h4>
-          <div id="bookmarks-list"><p class="muted">載入中…</p></div>
-        </section>
-      </div>
     </div>
   </div>
 </BaseLayout>
-
-<script define:vars={{ workTitles, chapterTitles }}>
-  window.__titles = { workTitles, chapterTitles };
-</script>
 
 <script>
   import { ADMIN_URL } from '../../site.config';
@@ -167,40 +145,6 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
     $('t-register').classList.toggle('active', name === 'register');
   }
 
-  async function loadShelf() {
-    const { workTitles, chapterTitles } = (window as any).__titles;
-    const rows = await api('/progress');
-    $('shelf').innerHTML = rows.length
-      ? rows.map((p: any) => `<a class="shelf-item" href="${base}works/${p.work_slug}/${p.chapter_slug}/">
-          <span class="w">${workTitles[p.work_slug] || p.work_slug}</span>
-          <span class="c">${chapterTitles[p.chapter_slug] || p.chapter_slug} →</span></a>`).join('')
-      : '<p class="muted">還沒有閱讀紀錄。去<a href="' + base + '">首頁</a>挑一本開始吧！</p>';
-  }
-
-  async function loadBookmarks() {
-    const { workTitles, chapterTitles } = (window as any).__titles;
-    const rows = await api('/bookmarks');
-    $('bookmarks-list').innerHTML = rows.length
-      ? rows.map((b: any) => {
-          const href = b.chapter_slug
-            ? `${base}works/${b.work_slug}/${b.chapter_slug}/`
-            : `${base}works/${b.work_slug}/`;
-          const detail = b.chapter_slug ? (chapterTitles[b.chapter_slug] || b.chapter_slug) : '前往作品';
-          return `<div class="bookmark-item">
-            <a href="${href}"><span class="w">${workTitles[b.work_slug] || b.work_slug}</span><span class="c">${detail} →</span></a>
-            <button class="bookmark-remove" data-work="${b.work_slug}" aria-label="移除收藏">移除</button>
-          </div>`;
-        }).join('')
-      : '<p class="muted">還沒有收藏。到作品頁按「收藏」加入吧！</p>';
-    document.querySelectorAll<HTMLButtonElement>('.bookmark-remove').forEach(btn => {
-      btn.onclick = async () => {
-        btn.disabled = true;
-        try { await api('/bookmarks/remove', { work_slug: btn.dataset.work }); await loadBookmarks(); }
-        catch (e: any) { msg(e.message); btn.disabled = false; }
-      };
-    });
-  }
-
   async function boot() {
     ($('lnk-admin') as HTMLAnchorElement).href = ADMIN_URL;
     const params = new URLSearchParams(location.search);
@@ -226,8 +170,7 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
       const me = await api('/me');
       fillProfile(me);
       show('member');
-      await Promise.all([loadShelf(), loadBookmarks()]);
-      // 從頁首選單帶 #profile / #library / #bookmarks 進來時捲到該區塊
+      // 從頁首選單帶 #profile 進來時捲到個人資料
       if (location.hash) document.querySelector(location.hash)?.scrollIntoView({ behavior: 'smooth' });
     } catch { show('guest'); }
   }
@@ -508,22 +451,8 @@ const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(c 
   .pf-foot .muted { font-size: 13px; }
   .public-profile-note { margin: 12px 0 0; color: var(--ink3); font-size: 12px; line-height: 1.7; }
   .public-profile-note a { color: var(--accent); text-decoration: underline; }
-  .library-card > h3 { margin-bottom: 4px; font-size: 18px; }
-  .library-group { padding-top: 18px; }
-  .library-group + .library-group { margin-top: 18px; border-top: 1px solid var(--line); }
-  .library-group h4 { margin: 0 0 10px; color: var(--ink); font-size: 15px; }
-  .library-group h4 span { margin-left: 6px; color: var(--ink3); font-size: 12px; font-weight: 400; }
   #pf-bio, #pf-author-message { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; padding: 10px;
             border: 1px solid var(--line); border-radius: 6px; background: var(--white); color: var(--ink); }
   .muted { color: var(--ink3); font-size: 13px; }
   h3 { margin: 0 0 12px; font-size: 15px; }
-  .shelf-item { display: flex; justify-content: space-between; padding: 10px 4px; border-bottom: 1px solid var(--line); text-decoration: none; color: var(--ink); }
-  .shelf-item:last-child { border-bottom: none; }
-  .shelf-item .c { color: var(--ink2); font-size: 13px; }
-  .bookmark-item { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); }
-  .bookmark-item:last-child { border-bottom: none; }
-  .bookmark-item a { display: flex; justify-content: space-between; gap: 12px; padding: 10px 4px; text-decoration: none; color: var(--ink); min-width: 0; }
-  .bookmark-item .c { color: var(--ink2); font-size: 13px; white-space: nowrap; }
-  .bookmark-remove { border: 0; background: none; color: var(--ink3); cursor: pointer; font: inherit; font-size: 12px; padding: 6px; }
-  .bookmark-remove:hover { color: #b3402f; }
 </style>

@@ -1,0 +1,370 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+import Header from '@components/Header.astro';
+import Footer from '@components/Footer.astro';
+import { getCollection } from 'astro:content';
+
+const base = import.meta.env.BASE_URL;
+const works = await getCollection('works');
+const chapters = await getCollection('chapters');
+const workTitles: Record<string, string> = Object.fromEntries(works.map(work => [work.slug, work.data.title]));
+const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(chapter => [chapter.slug, chapter.data.title]));
+const loginHref = `${base}account/?next=${encodeURIComponent(`${base}library/`)}`;
+---
+
+<BaseLayout title="我的書架 — 小書樓" description="查看閱讀進度與收藏作品">
+  <Header slot="header" />
+  <Footer slot="footer" />
+
+  <main class="library-page container">
+    <header class="library-head">
+      <p class="eyebrow">MY LIBRARY</p>
+      <h1>我的書架</h1>
+      <p>閱讀進度與收藏作品，都收在這裡。</p>
+    </header>
+
+    <div id="library-loading" class="library-state">正在整理書架…</div>
+
+    <section id="library-guest" class="library-state guest-card" hidden>
+      <h2>登入後查看你的書架</h2>
+      <p>登入會員即可同步閱讀進度與收藏作品。</p>
+      <a class="login-link" href={loginHref}>前往登入</a>
+    </section>
+
+    <div id="library-content" hidden>
+      <section class="library-card" aria-labelledby="progress-title">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">CONTINUE READING</p>
+            <h2 id="progress-title">閱讀進度</h2>
+          </div>
+          <span>讀到哪，接著讀</span>
+        </div>
+        <div id="shelf"><p class="muted">載入中…</p></div>
+      </section>
+
+      <section class="library-card" aria-labelledby="bookmarks-title">
+        <div class="section-head">
+          <div>
+            <p class="section-kicker">FAVORITES</p>
+            <h2 id="bookmarks-title">收藏作品</h2>
+          </div>
+          <span>想讀的故事，留在書架上</span>
+        </div>
+        <div id="bookmarks-list"><p class="muted">載入中…</p></div>
+      </section>
+    </div>
+  </main>
+</BaseLayout>
+
+<script define:vars={{ workTitles, chapterTitles }}>
+  window.__titles = { workTitles, chapterTitles };
+</script>
+
+<script>
+  import { ADMIN_URL } from '../../site.config';
+
+  const base = import.meta.env.BASE_URL;
+  const $ = (id: string) => document.getElementById(id)!;
+
+  async function api(path: string, body?: unknown) {
+    let response: Response;
+    try {
+      response = await fetch(`${ADMIN_URL}/api/reader${path}`, {
+        method: body === undefined ? 'GET' : 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: body === undefined ? undefined : JSON.stringify(body),
+      });
+    } catch {
+      throw new Error('連線失敗，請稍後再試');
+    }
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || '發生問題，請稍後再試');
+    return data;
+  }
+
+  function titleMaps() {
+    return (window as any).__titles as {
+      workTitles: Record<string, string>;
+      chapterTitles: Record<string, string>;
+    };
+  }
+
+  async function loadShelf() {
+    const { workTitles, chapterTitles } = titleMaps();
+    const rows = await api('/progress');
+    $('shelf').innerHTML = rows.length
+      ? rows.map((progress: any) => `<a class="shelf-item" href="${base}works/${progress.work_slug}/${progress.chapter_slug}/">
+          <span class="w">${workTitles[progress.work_slug] || progress.work_slug}</span>
+          <span class="c">${chapterTitles[progress.chapter_slug] || progress.chapter_slug} →</span>
+        </a>`).join('')
+      : `<p class="muted">還沒有閱讀紀錄。去<a href="${base}">首頁</a>挑一本開始吧！</p>`;
+  }
+
+  async function loadBookmarks() {
+    const { workTitles, chapterTitles } = titleMaps();
+    const rows = await api('/bookmarks');
+    $('bookmarks-list').innerHTML = rows.length
+      ? rows.map((bookmark: any) => {
+          const href = bookmark.chapter_slug
+            ? `${base}works/${bookmark.work_slug}/${bookmark.chapter_slug}/`
+            : `${base}works/${bookmark.work_slug}/`;
+          const detail = bookmark.chapter_slug
+            ? (chapterTitles[bookmark.chapter_slug] || bookmark.chapter_slug)
+            : '前往作品';
+          return `<div class="bookmark-item">
+            <a href="${href}">
+              <span class="w">${workTitles[bookmark.work_slug] || bookmark.work_slug}</span>
+              <span class="c">${detail} →</span>
+            </a>
+            <button class="bookmark-remove" type="button" data-work="${bookmark.work_slug}" aria-label="移除收藏">移除</button>
+          </div>`;
+        }).join('')
+      : '<p class="muted">還沒有收藏。到作品頁按「收藏」加入吧！</p>';
+
+    document.querySelectorAll<HTMLButtonElement>('.bookmark-remove').forEach(button => {
+      button.addEventListener('click', async () => {
+        button.disabled = true;
+        try {
+          await api('/bookmarks/remove', { work_slug: button.dataset.work });
+          await loadBookmarks();
+        } catch (error: any) {
+          button.disabled = false;
+          alert(error.message);
+        }
+      });
+    });
+  }
+
+  async function boot() {
+    try {
+      await api('/me');
+      await Promise.all([loadShelf(), loadBookmarks()]);
+      $('library-loading').hidden = true;
+      $('library-content').hidden = false;
+    } catch {
+      $('library-loading').hidden = true;
+      $('library-guest').hidden = false;
+    }
+  }
+
+  boot();
+</script>
+
+<style>
+  .library-page {
+    max-width: 960px;
+    padding-block: 56px 72px;
+  }
+
+  .library-head {
+    margin-bottom: 28px;
+  }
+
+  .eyebrow,
+  .section-kicker {
+    margin: 0 0 7px;
+    color: var(--accent);
+    font-family: var(--font-sans);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .18em;
+  }
+
+  .library-head h1 {
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: clamp(30px, 5vw, 44px);
+    letter-spacing: .08em;
+  }
+
+  .library-head > p:last-child {
+    margin: 10px 0 0;
+    color: var(--ink3);
+    font-size: 14px;
+  }
+
+  .library-state,
+  .library-card {
+    box-sizing: border-box;
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--white);
+  }
+
+  .library-state {
+    padding: 36px 28px;
+    color: var(--ink3);
+    text-align: center;
+  }
+
+  .guest-card h2 {
+    margin: 0 0 10px;
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 23px;
+  }
+
+  .guest-card p {
+    margin: 0 0 22px;
+  }
+
+  .login-link {
+    display: inline-flex;
+    min-height: 42px;
+    padding: 0 24px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 22px;
+    background: var(--accent);
+    color: white;
+    font-weight: 600;
+    text-decoration: none;
+  }
+
+  .library-card {
+    padding: 26px 28px;
+    box-shadow: 0 10px 28px rgba(19, 68, 64, .045);
+  }
+
+  .library-card + .library-card {
+    margin-top: 20px;
+  }
+
+  .section-head {
+    display: flex;
+    margin-bottom: 12px;
+    align-items: end;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 14px;
+  }
+
+  .section-head h2 {
+    margin: 0;
+    color: var(--ink);
+    font-family: var(--font-serif);
+    font-size: 21px;
+  }
+
+  .section-head > span {
+    color: var(--ink3);
+    font-size: 12px;
+  }
+
+  #shelf :global(.shelf-item) {
+    display: flex;
+    padding: 14px 4px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  #shelf :global(.shelf-item:last-child) {
+    border-bottom: 0;
+  }
+
+  #shelf :global(.shelf-item:hover .w),
+  #bookmarks-list :global(.bookmark-item a:hover .w) {
+    color: var(--accent);
+  }
+
+  #shelf :global(.c),
+  #bookmarks-list :global(.c) {
+    flex-shrink: 0;
+    color: var(--ink2);
+    font-size: 13px;
+  }
+
+  #bookmarks-list :global(.bookmark-item) {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  #bookmarks-list :global(.bookmark-item:last-child) {
+    border-bottom: 0;
+  }
+
+  #bookmarks-list :global(.bookmark-item a) {
+    display: flex;
+    min-width: 0;
+    padding: 14px 4px;
+    justify-content: space-between;
+    gap: 18px;
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  #bookmarks-list :global(.bookmark-remove) {
+    border: 0;
+    background: none;
+    color: var(--ink3);
+    cursor: pointer;
+    font: inherit;
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  #bookmarks-list :global(.bookmark-remove:hover) {
+    color: #b3402f;
+  }
+
+  #bookmarks-list :global(.bookmark-remove:disabled) {
+    cursor: wait;
+    opacity: .5;
+  }
+
+  #shelf :global(.muted),
+  #bookmarks-list :global(.muted) {
+    margin: 12px 4px 4px;
+    color: var(--ink3);
+    font-size: 13px;
+  }
+
+  #shelf :global(.muted a),
+  #bookmarks-list :global(.muted a) {
+    color: var(--accent);
+  }
+
+  @media (max-width: 640px) {
+    .library-page {
+      padding-block: 34px 48px;
+    }
+
+    .library-card {
+      padding: 22px 18px;
+    }
+
+    .section-head {
+      align-items: start;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    #shelf :global(.shelf-item),
+    #bookmarks-list :global(.bookmark-item a) {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    #bookmarks-list :global(.bookmark-item) {
+      align-items: start;
+    }
+
+    #shelf :global(.c),
+    #bookmarks-list :global(.c) {
+      white-space: normal;
+    }
+  }
+</style>
