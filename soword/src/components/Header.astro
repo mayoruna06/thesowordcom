@@ -28,6 +28,11 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
       <input name="q" type="search" maxlength="50" placeholder="搜尋小說、內文…" aria-label="搜尋小說與內文" />
     </form>
 
+    <button id="theme-toggle" class="theme-toggle" type="button" aria-label="切換為深色模式" title="切換為深色模式">
+      <span class="theme-icon theme-icon-moon" aria-hidden="true">☾</span>
+      <span class="theme-icon theme-icon-sun" aria-hidden="true">☀</span>
+    </button>
+
     <!-- 登入後由下方 script 顯示；靜態網站無法在建置時得知登入狀態 -->
     <div class="usermenu" id="usermenu" hidden>
       <button id="avatar-btn" aria-haspopup="true" aria-expanded="false" aria-label="會員選單">
@@ -125,6 +130,26 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
   .search-wrap input::placeholder { color: var(--ink3); }
   .search-wrap svg { color: var(--ink3); flex-shrink: 0; }
 
+  .theme-toggle {
+    width: 34px; height: 34px;
+    flex: 0 0 auto;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--tag-bg);
+    color: var(--ink2);
+    cursor: pointer;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    transition: color var(--transition), border-color var(--transition), transform var(--transition);
+  }
+  .theme-toggle:hover { color: var(--accent); border-color: var(--accent); transform: rotate(8deg); }
+  .theme-toggle:focus-visible { outline: 3px solid color-mix(in srgb, var(--accent) 30%, transparent); outline-offset: 2px; }
+  .theme-icon { grid-area: 1 / 1; font-size: 18px; line-height: 1; }
+  .theme-icon-sun { display: none; }
+  :global(html[data-theme='dark']) .theme-icon-moon { display: none; }
+  :global(html[data-theme='dark']) .theme-icon-sun { display: block; }
+
   /* ── 會員頭像選單 ── */
   .usermenu { position: relative; flex-shrink: 0; }
 
@@ -208,7 +233,23 @@ const isAnnouncements = currentPath.startsWith(`${base}announcements/`);
   const btn = document.getElementById('avatar-btn')!;
   const navLogin = document.getElementById('nav-login');
   const adminMenuLink = document.getElementById('admin-menu-link') as HTMLAnchorElement;
+  const themeToggle = document.getElementById('theme-toggle') as HTMLButtonElement;
   adminMenuLink.href = ADMIN_URL;
+
+  function syncThemeButton() {
+    const dark = document.documentElement.dataset.theme === 'dark';
+    const label = dark ? '切換為亮色模式' : '切換為深色模式';
+    themeToggle.setAttribute('aria-label', label);
+    themeToggle.title = label;
+  }
+
+  syncThemeButton();
+  themeToggle.addEventListener('click', () => {
+    const next = document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('soword-theme', next); } catch { /* 主題仍會套用於本頁 */ }
+    syncThemeButton();
+  });
 
   // 靜態網站無法在建置時得知登入狀態，改由前端詢問後台。
   // localStorage 只是為了避免每次換頁閃一下「登入」，真正依據仍是伺服器回應。

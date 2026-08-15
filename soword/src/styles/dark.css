@@ -1,0 +1,139 @@
+html[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #0d1719;
+  --bg2: #142427;
+  --ink: #e5f1ef;
+  --ink2: #adc2bf;
+  --ink3: #78928f;
+  --accent: #4bd2b5;
+  --accent2: #2b9b87;
+  --warm: #1b3633;
+  --line: #29413f;
+  --tag-bg: #17302d;
+  --white: #132124;
+  --red: #f08391;
+  --green: #42c5a8;
+  --bluegray: #d2ebe7;
+}
+
+html[data-theme='dark'] body {
+  background-color: var(--bg) !important;
+  background-image:
+    radial-gradient(circle at 8% 10%, rgba(75, 210, 181, .08), transparent 24rem),
+    radial-gradient(circle at 92% 35%, rgba(43, 155, 135, .06), transparent 26rem) !important;
+}
+
+html[data-theme='dark'] .site-header {
+  background: rgba(13, 23, 25, .92) !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .2) !important;
+}
+
+html[data-theme='dark'] .site-footer {
+  background: rgba(13, 23, 25, .72) !important;
+}
+
+html[data-theme='dark'] .home-hero {
+  background: #102326 !important;
+  color: var(--ink) !important;
+}
+
+html[data-theme='dark'] .home-hero::before {
+  background: linear-gradient(90deg, #102326 0%, rgba(16, 35, 38, .92) 28%, rgba(16, 35, 38, .55) 62%, rgba(16, 35, 38, .9) 100%) !important;
+}
+
+html[data-theme='dark'] .home-hero h1,
+html[data-theme='dark'] .hero-secondary,
+html[data-theme='dark'] .hero-lead {
+  color: var(--ink) !important;
+}
+
+html[data-theme='dark'] .hero-secondary {
+  border-color: var(--line) !important;
+}
+
+html[data-theme='dark'] .hero-secondary:hover {
+  background: var(--warm) !important;
+}
+
+html[data-theme='dark'] .hero-image img {
+  opacity: .38 !important;
+  mix-blend-mode: luminosity !important;
+}
+
+html[data-theme='dark'] .recommendation-card,
+html[data-theme='dark'] .sidebar-card,
+html[data-theme='dark'] .pinned-announcement,
+html[data-theme='dark'] .account-wrap .card,
+html[data-theme='dark'] .author-page .profile,
+html[data-theme='dark'] .comments,
+html[data-theme='dark'] .detail-hero {
+  background: rgba(19, 33, 36, .82) !important;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, .18) !important;
+}
+
+html[data-theme='dark'] .recommendation-card.featured {
+  background: linear-gradient(135deg, #173532, #132124) !important;
+}
+
+html[data-theme='dark'] .cover-blank {
+  background: linear-gradient(145deg, #17272a, #10201f) !important;
+}
+
+html[data-theme='dark'] .tag-discovery-item {
+  background: var(--white) !important;
+  color: var(--ink2) !important;
+}
+
+html[data-theme='dark'] .author-message {
+  background: #17312f !important;
+}
+
+html[data-theme='dark'] .author-page .avatar {
+  border-color: #1a3935 !important;
+}
+
+html[data-theme='dark'] .account-wrap input,
+html[data-theme='dark'] .account-wrap textarea,
+html[data-theme='dark'] .comment-form textarea {
+  background: #101d20 !important;
+  color: var(--ink) !important;
+}
+
+html[data-theme='dark'] .reading-bar {
+  background: rgba(13, 23, 25, .92) !important;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .2) !important;
+}
+
+html[data-theme='dark'] .ctrl-btn,
+html[data-theme='dark'] .ch-nav-btn {
+  background: rgba(19, 33, 36, .9) !important;
+}
+
+html[data-theme='dark'] .chapter-body {
+  color: #c9dcda !important;
+}
+
+html[data-theme='dark'] .avatar-dialog {
+  background: var(--white) !important;
+  color: var(--ink) !important;
+}
+
+html[data-theme='dark'] .avatar-dialog::backdrop {
+  background: rgba(2, 8, 10, .72) !important;
+}
+
+html[data-theme='dark'] img.logo-mark,
+html[data-theme='dark'] .announcement-art,
+html[data-theme='dark'] .read-bookmark {
+  filter: brightness(.88) saturate(.78);
+}
+
+html[data-theme='dark'] :focus-visible {
+  outline-color: var(--accent);
+}
+
+@media (max-width: 640px) {
+  html[data-theme='dark'] .home-hero::before {
+    background: linear-gradient(180deg, #102326 0%, rgba(16, 35, 38, .82) 54%, rgba(16, 35, 38, .98) 100%) !important;
+  }
+}

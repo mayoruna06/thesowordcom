@@ -25,6 +25,17 @@ const fullTitle = title === siteName ? brandTitle : `${title} | ${brandTitle}`;
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+
+    <script is:inline>
+      (() => {
+        try {
+          const saved = localStorage.getItem('soword-theme');
+          const dark = saved ? saved === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+          document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+        } catch { /* 使用預設亮色主題 */ }
+      })();
+    </script>
 
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
