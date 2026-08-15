@@ -22,18 +22,17 @@ const randomWorkUrls = allWorks.map(work => `${base}works/${work.slug}/`);
   <Footer slot="footer" />
 
   <section class="home-hero" aria-labelledby="home-title">
+    <img class="hero-side-art hero-side-left" src={`${base}images/hero-main-left-extension.png`} alt="" aria-hidden="true" />
+    <img class="hero-side-art hero-side-right" src={`${base}images/hero-main-right-extension.png`} alt="" aria-hidden="true" />
     <div class="home-hero-inner container">
       <div class="hero-copy">
         <h1 id="home-title">下個世界，可能，也許在這裡</h1>
         <p class="hero-lead">在小書樓，收藏正在發生的故事，也慢慢找到屬於你的下一本小說。</p>
-        <div class="hero-actions">
-          <a class="hero-primary" id="random-work" data-work-urls={JSON.stringify(randomWorkUrls)} href={randomWorkUrls[0] ?? `${base}search/`}>隨機推薦一本書 <span>↗</span></a>
-          <a class="hero-secondary" href={`${base}tags/`}>查看標籤分類</a>
+        <div class="hero-actions">          <a class="hero-primary hero-action-card" id="random-work" data-work-urls={JSON.stringify(randomWorkUrls)} href={randomWorkUrls[0] ?? `${base}search/`}><img class="hero-action-art" src={`${base}images/action-random-book.png`} alt="" aria-hidden="true" /><span class="hero-action-copy"><strong>隨機推薦一本書</strong></span><span class="hero-action-arrow" aria-hidden="true">↗</span></a>
+          <a class="hero-secondary hero-action-card" href={`${base}tags/`}><img class="hero-action-art" src={`${base}images/action-tag-categories.png`} alt="" aria-hidden="true" /><span class="hero-action-copy"><strong>查看標籤分類</strong></span><span class="hero-action-arrow" aria-hidden="true">↗</span></a>
         </div>
       </div>
-      <div class="hero-image"><img src={`${base}images/hero-editorial.png`} alt="打開的書本、薄荷書籤與午後閱讀桌面" /></div>
-        <div class="art-orbit orbit-one"></div><div class="art-orbit orbit-two"></div>
-      </div>
+      <div class="hero-image"><img src={`${base}images/hero-jianghu-desk-night.png`} alt="江湖夜讀書桌、竹影與窗外古樓燈火" /></div>
     </div>
   </section>
 
