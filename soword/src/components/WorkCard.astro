@@ -20,20 +20,21 @@ const badgeClass = isNew ? 'badge-new' : status === 'ongoing' ? 'badge-ongoing' 
 const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status === 'hiatus' ? '暫停' : '完結';
 ---
 
-<div class="novel-card">
+<div class="novel-card" data-work-slug={work.slug}>
   <a class="cover-link" href={workHref} aria-label={title}>
     <div class="cover-wrap">
       {cover
         ? <img src={`${base}images/covers/${cover}`} alt={title} class="cover-img" loading="lazy" />
         : (
           <div class="cover-blank">
-            <div class="cover-blank-deco">書</div>
+
             <div class="cover-blank-title">{title}</div>
             <div class="cover-blank-author">{author}</div>
           </div>
         )
       }
       <span class={`badge ${badgeClass}`}>{badgeLabel}</span>
+      <img class="read-bookmark" src={`${base}images/bookmark-leaf.png`} alt="已讀過此作品" hidden />
     </div>
   </a>
   <div class="novel-info">
@@ -158,3 +159,18 @@ const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status =
     flex-wrap: wrap;
   }
 </style>
+
+<script data-read-bookmark-init>
+  const markReadWorks = () => {
+    let loggedIn = false;
+    try { loggedIn = Boolean(localStorage.getItem('soword-member')); } catch {}
+    document.querySelectorAll<HTMLElement>('.novel-card[data-work-slug]').forEach(card => {
+      const slug = card.dataset.workSlug;
+      const hasProgress = slug && localStorage.getItem(`last-chapter-${slug}`);
+      card.classList.toggle('is-read', loggedIn && Boolean(hasProgress));
+    });
+  };
+  markReadWorks();
+  window.setTimeout(markReadWorks, 900);
+  window.addEventListener('storage', markReadWorks);
+</script>

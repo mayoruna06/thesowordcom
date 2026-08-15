@@ -1,7 +1,5 @@
 ---
 import type { CollectionEntry } from 'astro:content';
-import { collectTagStats, tagHref } from '../tags';
-
 const base = import.meta.env.BASE_URL;
 
 interface Props {
@@ -10,15 +8,7 @@ interface Props {
   announcements: CollectionEntry<'announcements'>[];
 }
 
-const { works, chapterCountByWork, announcements } = Astro.props;
-
-// 排行：章節數最多的前 5 部
-const ranked = [...works]
-  .sort((a, b) => (chapterCountByWork[b.slug] ?? 0) - (chapterCountByWork[a.slug] ?? 0))
-  .slice(0, 5);
-
-// 標籤雲：依公開作品數排序，並保留每個標籤的作品數。
-const allTags = collectTagStats(works.map(w => w.data));
+const { works, announcements } = Astro.props;
 
 const dateStr = (d: Date) =>
   d.toLocaleDateString('zh-TW', { month: '2-digit', day: '2-digit' });
@@ -26,20 +16,6 @@ const dateStr = (d: Date) =>
 
 <aside class="sidebar">
 
-  {ranked.length > 0 && (
-    <div class="sidebar-card">
-      <div class="sidebar-card-title">作品排行</div>
-      <div class="rank-list">
-        {ranked.map((work, i) => (
-          <a href={`${base}works/${work.slug}/`} class="rank-item">
-            <span class:list={['rank-num', { top: i < 3 }]}>{i + 1}</span>
-            <span class="rank-title">{work.data.title}</span>
-            <span class="rank-count">{chapterCountByWork[work.slug] ?? 0} 章</span>
-          </a>
-        ))}
-      </div>
-    </div>
-  )}
 
   <div class="sidebar-card">
     <div class="sidebar-card-title">最新公告</div>
@@ -57,23 +33,7 @@ const dateStr = (d: Date) =>
       )
       : <p class="sidebar-empty">暫無公告</p>
     }
-  </div>
-
-  {allTags.length > 0 && (
-    <div class="sidebar-card">
-      <div class="sidebar-card-title">標籤分類</div>
-      <div class="tag-cloud">
-        {allTags.map(t => (
-          <a class="tag" href={tagHref(base, t.key)} aria-label={t.label + '，' + t.count + ' 部作品'}>
-            <span>{t.label}</span>
-            <span class="tag-count">{t.count}</span>
-          </a>
-        ))}
-      </div>
-    </div>
-  )}
-
-</aside>
+  </div></aside>
 
 <style>
   .rank-list { display: flex; flex-direction: column; }
