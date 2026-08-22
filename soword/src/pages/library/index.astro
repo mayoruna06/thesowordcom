@@ -7,8 +7,6 @@ import { getCollection } from 'astro:content';
 const base = import.meta.env.BASE_URL;
 const works = await getCollection('works');
 const chapters = await getCollection('chapters');
-const workTitles: Record<string, string> = Object.fromEntries(works.map(work => [work.slug, work.data.title]));
-const chapterTitles: Record<string, string> = Object.fromEntries(chapters.map(chapter => [chapter.slug, chapter.data.title]));
 const loginHref = `${base}account/?next=${encodeURIComponent(`${base}library/`)}`;
 ---
 
@@ -54,12 +52,14 @@ const loginHref = `${base}account/?next=${encodeURIComponent(`${base}library/`)}
         <div id="bookmarks-list"><p class="muted">載入中…</p></div>
       </section>
     </div>
+
+    <!-- 以 Astro 的文字／屬性跳脫輸出標題，避免把作者內容塞進 inline script。 -->
+    <div id="library-title-data" hidden aria-hidden="true">
+      {works.map(work => <span data-kind="work" data-slug={work.id}>{work.data.title}</span>)}
+      {chapters.map(chapter => <span data-kind="chapter" data-slug={chapter.id}>{chapter.data.title}</span>)}
+    </div>
   </main>
 </BaseLayout>
-
-<script define:vars={{ workTitles, chapterTitles }}>
-  window.__titles = { workTitles, chapterTitles };
-</script>
 
 <script>
   import { ADMIN_URL } from '../../site.config';
@@ -85,43 +85,89 @@ const loginHref = `${base}account/?next=${encodeURIComponent(`${base}library/`)}
   }
 
   function titleMaps() {
-    return (window as any).__titles as {
-      workTitles: Record<string, string>;
-      chapterTitles: Record<string, string>;
-    };
+    const workTitles: Record<string, string> = {};
+    const chapterTitles: Record<string, string> = {};
+    document.querySelectorAll<HTMLElement>('#library-title-data [data-kind][data-slug]').forEach(node => {
+      const target = node.dataset.kind === 'work' ? workTitles : chapterTitles;
+      target[node.dataset.slug!] = node.textContent || '';
+    });
+    return { workTitles, chapterTitles };
+  }
+
+  function addText(parent: HTMLElement, className: string, text: string) {
+    const span = document.createElement('span');
+    span.className = className;
+    span.textContent = text;
+    parent.append(span);
+  }
+
+  function emptyShelf() {
+    const message = document.createElement('p');
+    message.className = 'muted';
+    message.append('還沒有閱讀紀錄。去');
+    const link = document.createElement('a');
+    link.href = base;
+    link.textContent = '首頁';
+    message.append(link, '挑一本開始吧！');
+    return message;
+  }
+
+  function emptyBookmarks() {
+    const message = document.createElement('p');
+    message.className = 'muted';
+    message.textContent = '還沒有收藏。到作品頁按「收藏」加入吧！';
+    return message;
   }
 
   async function loadShelf() {
     const { workTitles, chapterTitles } = titleMaps();
     const rows = await api('/progress');
-    $('shelf').innerHTML = rows.length
-      ? rows.map((progress: any) => `<a class="shelf-item" href="${base}works/${progress.work_slug}/${progress.chapter_slug}/">
-          <span class="w">${workTitles[progress.work_slug] || progress.work_slug}</span>
-          <span class="c">${chapterTitles[progress.chapter_slug] || progress.chapter_slug} →</span>
-        </a>`).join('')
-      : `<p class="muted">還沒有閱讀紀錄。去<a href="${base}">首頁</a>挑一本開始吧！</p>`;
+    const shelf = $('shelf');
+    shelf.replaceChildren();
+    if (!rows.length) {
+      shelf.append(emptyShelf());
+      return;
+    }
+    rows.forEach((progress: any) => {
+      const link = document.createElement('a');
+      link.className = 'shelf-item';
+      link.href = `${base}works/${encodeURIComponent(progress.work_slug)}/${encodeURIComponent(progress.chapter_slug)}/`;
+      addText(link, 'w', workTitles[progress.work_slug] || progress.work_slug);
+      addText(link, 'c', `${chapterTitles[progress.chapter_slug] || progress.chapter_slug} →`);
+      shelf.append(link);
+    });
   }
 
   async function loadBookmarks() {
     const { workTitles, chapterTitles } = titleMaps();
     const rows = await api('/bookmarks');
-    $('bookmarks-list').innerHTML = rows.length
-      ? rows.map((bookmark: any) => {
-          const href = bookmark.chapter_slug
-            ? `${base}works/${bookmark.work_slug}/${bookmark.chapter_slug}/`
-            : `${base}works/${bookmark.work_slug}/`;
-          const detail = bookmark.chapter_slug
-            ? (chapterTitles[bookmark.chapter_slug] || bookmark.chapter_slug)
-            : '前往作品';
-          return `<div class="bookmark-item">
-            <a href="${href}">
-              <span class="w">${workTitles[bookmark.work_slug] || bookmark.work_slug}</span>
-              <span class="c">${detail} →</span>
-            </a>
-            <button class="bookmark-remove" type="button" data-work="${bookmark.work_slug}" aria-label="移除收藏">移除</button>
-          </div>`;
-        }).join('')
-      : '<p class="muted">還沒有收藏。到作品頁按「收藏」加入吧！</p>';
+    const list = $('bookmarks-list');
+    list.replaceChildren();
+    if (!rows.length) {
+      list.append(emptyBookmarks());
+      return;
+    }
+    rows.forEach((bookmark: any) => {
+      const item = document.createElement('div');
+      item.className = 'bookmark-item';
+      const link = document.createElement('a');
+      link.href = bookmark.chapter_slug
+        ? `${base}works/${encodeURIComponent(bookmark.work_slug)}/${encodeURIComponent(bookmark.chapter_slug)}/`
+        : `${base}works/${encodeURIComponent(bookmark.work_slug)}/`;
+      const detail = bookmark.chapter_slug
+        ? (chapterTitles[bookmark.chapter_slug] || bookmark.chapter_slug)
+        : '前往作品';
+      addText(link, 'w', workTitles[bookmark.work_slug] || bookmark.work_slug);
+      addText(link, 'c', `${detail} →`);
+      const remove = document.createElement('button');
+      remove.className = 'bookmark-remove';
+      remove.type = 'button';
+      remove.dataset.work = bookmark.work_slug;
+      remove.setAttribute('aria-label', '移除收藏');
+      remove.textContent = '移除';
+      item.append(link, remove);
+      list.append(item);
+    });
 
     document.querySelectorAll<HTMLButtonElement>('.bookmark-remove').forEach(button => {
       button.addEventListener('click', async () => {

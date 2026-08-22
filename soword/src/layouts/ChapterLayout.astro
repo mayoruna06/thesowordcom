@@ -20,7 +20,7 @@ const { work, chapter, chapters, prev, next } = Astro.props;
 const { title, publishedAt, updatedAt } = chapter.data;
 
 const sorted = [...chapters].sort((a, b) => a.data.chapter - b.data.chapter);
-const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
+const pos = sorted.findIndex(c => c.id === chapter.id) + 1;
 ---
 
 <BaseLayout
@@ -32,7 +32,7 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
   <!-- Reading Bar -->
   <div class="reading-bar">
     <div class="reading-bar-nav">
-      <a class="back-btn" href={`${base}works/${work.slug}/`}>← 返回</a>
+      <a class="back-btn" href={`${base}works/${work.id}/`}>← 返回</a>
       <span class="sep">|</span>
       <div class="breadcrumb">
         <span>{work.data.title}</span>
@@ -76,12 +76,12 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
     <!-- Chapter Nav -->
     <div class="chapter-nav-bar">
       {prev
-        ? <a class="ch-nav-btn" href={`${base}works/${work.slug}/${prev.slug}/`}>← 上一章</a>
+        ? <a class="ch-nav-btn" href={`${base}works/${work.id}/${prev.id}/`}>← 上一章</a>
         : <button class="ch-nav-btn" disabled>← 上一章</button>
       }
       <span class="chapter-pos">{pos} / {chapters.length}</span>
       {next
-        ? <a class="ch-nav-btn" href={`${base}works/${work.slug}/${next.slug}/`}>下一章 →</a>
+        ? <a class="ch-nav-btn" href={`${base}works/${work.id}/${next.id}/`}>下一章 →</a>
         : <button class="ch-nav-btn" disabled>下一章 →</button>
       }
     </div>
@@ -224,7 +224,7 @@ const pos = sorted.findIndex(c => c.slug === chapter.slug) + 1;
   }
 </style>
 
-<script define:vars={{ workSlug: work.slug, chapterSlug: chapter.slug, adminUrl: ADMIN_URL, baseUrl: base, presetAvatars: ALL_AVATARS, tones: TONES }}>
+<script define:vars={{ workSlug: work.id, chapterSlug: chapter.id, adminUrl: ADMIN_URL, baseUrl: base, presetAvatars: ALL_AVATARS, tones: TONES }}>
   // 這段是 define:vars 內嵌腳本（不是模組，不能 import），
   // 所以頭像資料由上方 frontmatter 傳入，邏輯與 src/avatars.ts 的 avatarFace 相同。
   const commentAvatar = (avatar, displayName) => {

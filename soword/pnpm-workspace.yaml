@@ -1,7 +1,10 @@
 packages:
   - '.'
 
+overrides:
+  sharp: 0.35.3
+  svgo: 4.0.2
+
 allowBuilds:
-  esbuild@0.25.12: true
-  esbuild@0.27.7: true
-  sharp@0.34.5: true
+  esbuild: true
+  sharp: true

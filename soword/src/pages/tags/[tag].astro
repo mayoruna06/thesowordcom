@@ -65,7 +65,7 @@ const currentKey = currentTag;
       <h2 id="tag-work-list" class="section-title">符合標籤的作品</h2>
       <div class="novel-grid">
         {works.map(work => (
-          <WorkCard work={work} chapterCount={chapterCountByWork[work.slug] ?? 0} />
+          <WorkCard work={work} chapterCount={chapterCountByWork[work.id] ?? 0} />
         ))}
       </div>
     </section>

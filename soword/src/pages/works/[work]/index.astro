@@ -7,11 +7,11 @@ export async function getStaticPaths() {
   const allChapters = await getCollection('chapters');
 
   return works.map(work => ({
-    params: { work: work.slug },
+    params: { work: work.id },
     props: {
       work,
       chapters: allChapters
-        .filter(ch => ch.data.work === work.slug)
+        .filter(ch => ch.data.work === work.id)
         .sort((a, b) => a.data.chapter - b.data.chapter),
     },
   }));

@@ -16,7 +16,7 @@ const { workSlug, prev, next } = Astro.props;
   <div class="chapter-nav__inner">
     <div class="chapter-nav__prev">
       {prev && (
-        <a href={`${base}works/${workSlug}/${prev.slug}/`} class="chapter-nav__btn chapter-nav__btn--prev">
+        <a href={`${base}works/${workSlug}/${prev.id}/`} class="chapter-nav__btn chapter-nav__btn--prev">
           <span class="chapter-nav__arrow">←</span>
           <span class="chapter-nav__label">
             <span class="chapter-nav__hint">上一章</span>
@@ -30,7 +30,7 @@ const { workSlug, prev, next } = Astro.props;
 
     <div class="chapter-nav__next">
       {next && (
-        <a href={`${base}works/${workSlug}/${next.slug}/`} class="chapter-nav__btn chapter-nav__btn--next">
+        <a href={`${base}works/${workSlug}/${next.id}/`} class="chapter-nav__btn chapter-nav__btn--next">
           <span class="chapter-nav__label">
             <span class="chapter-nav__hint">下一章</span>
             <span class="chapter-nav__title">{next.data.title}</span>

@@ -34,7 +34,7 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
 <BaseLayout
   title={title}
   description={summary}
-  ogImage={cover ? `/images/og/${work.slug}.jpg` : undefined}
+  ogImage={cover ? `/images/og/${work.id}.jpg` : undefined}
 >
   <Header slot="header" />
   <Footer slot="footer" />
@@ -95,13 +95,13 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
 
           <div class="detail-actions">
             {firstChapter
-              ? <a class="btn-read" href={`${base}works/${work.slug}/${firstChapter.slug}/`}>▶ 從頭閱讀</a>
+              ? <a class="btn-read" href={`${base}works/${work.id}/${firstChapter.id}/`}>▶ 從頭閱讀</a>
               : <span class="btn-read btn-read--disabled">尚無章節</span>
             }
             {firstChapter && (
-              <button class="btn-read-cont" id="btn-continue" data-work={work.slug}>繼續閱讀</button>
+              <button class="btn-read-cont" id="btn-continue" data-work={work.id}>繼續閱讀</button>
             )}
-            <button class="btn-read-cont" id="btn-bookmark" data-work={work.slug}>☆ 收藏</button>
+            <button class="btn-read-cont" id="btn-bookmark" data-work={work.id}>☆ 收藏</button>
           </div>
         </div>
       </div>
@@ -118,7 +118,7 @@ const lastDate = (updatedAt ?? publishedAt).toLocaleDateString('zh-TW', { year: 
 
   <!-- Tab: 目錄 -->
   <div id="tab-catalogue" class="catalogue-wrap container fade-in">
-    <TableOfContents workSlug={work.slug} chapters={chapters} />
+    <TableOfContents workSlug={work.id} chapters={chapters} />
   </div>
 
   <!-- Tab: 詳情 -->

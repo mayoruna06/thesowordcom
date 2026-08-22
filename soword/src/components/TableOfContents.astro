@@ -21,8 +21,8 @@ const isNew = (d: Date) => Date.now() - d.getTime() < 7 * 86400_000;
     <div class="chapter-grid">
       {sorted.map((ch, i) => (
         <a
-          href={`${base}works/${workSlug}/${ch.slug}/`}
-          class:list={['chapter-item', { 'current-ch': ch.slug === currentSlug }]}
+          href={`${base}works/${workSlug}/${ch.id}/`}
+          class:list={['chapter-item', { 'current-ch': ch.id === currentSlug }]}
         >
           <span class="ch-num">{i + 1}</span>
           <span class="ch-title">{ch.data.title}</span>

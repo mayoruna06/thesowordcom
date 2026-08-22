@@ -28,5 +28,7 @@ jobs:
         working-directory: soword
       - run: pnpm run check
         working-directory: soword
+      - run: pnpm run test:security
+        working-directory: soword
       - run: pnpm run build
         working-directory: soword

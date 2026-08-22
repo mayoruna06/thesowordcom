@@ -14,7 +14,7 @@ export async function GET(context) {
       .map(ch => ({
         title: ch.data.title,
         pubDate: ch.data.publishedAt,
-        link: new URL(`${import.meta.env.BASE_URL}works/${ch.data.work}/${ch.slug}/`, context.site).href,
+        link: new URL(`${import.meta.env.BASE_URL}works/${ch.data.work}/${ch.id}/`, context.site).href,
       })),
     customData: '<language>zh-TW</language>',
   });

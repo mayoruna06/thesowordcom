@@ -26,7 +26,7 @@ const dateStr = (d: Date) => d.toLocaleDateString('zh-TW', { year: 'numeric', mo
     {announcements.length > 0 ? (
       <div class="announcement-list">
         {announcements.map(ann => (
-          <a class:list={['announcement-item', { pinned: ann.data.pinned }]} href={`${base}announcements/${ann.slug}/`}>
+          <a class:list={['announcement-item', { pinned: ann.data.pinned }]} href={`${base}announcements/${ann.id}/`}>
             <div class="item-meta">
               <time datetime={ann.data.publishedAt.toISOString()}>{dateStr(ann.data.publishedAt)}</time>
               {ann.data.pinned && <span>置頂</span>}

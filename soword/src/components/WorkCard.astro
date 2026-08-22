@@ -12,7 +12,7 @@ interface Props {
 
 const { work, chapterCount = 0, isNew = false } = Astro.props;
 const { title, subtitle, author, authorSlug, cover, status, tags } = work.data;
-const workHref = `${base}works/${work.slug}/`;
+const workHref = `${base}works/${work.id}/`;
 const authorHref = authorSlug ? `${base}authors/${authorSlug}/` : null;
 
 const primaryTag = tagEntries(work.data)[0];
@@ -20,7 +20,7 @@ const badgeClass = isNew ? 'badge-new' : status === 'ongoing' ? 'badge-ongoing' 
 const badgeLabel = isNew ? 'NEW' : status === 'ongoing' ? '連載中' : status === 'hiatus' ? '暫停' : '完結';
 ---
 
-<div class="novel-card" data-work-slug={work.slug}>
+<div class="novel-card" data-work-slug={work.id}>
   <a class="cover-link" href={workHref} aria-label={title}>
     <div class="cover-wrap">
       {cover

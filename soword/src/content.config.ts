@@ -1,9 +1,18 @@
 import { defineCollection, z } from 'astro:content';
+import { glob } from 'astro/loaders';
 
 const uuid = z.string().uuid();
+const markdownId = ({ entry }: { entry: string }) => entry
+  .replace(/\\/g, '/')
+  .replace(/\/index\.md$/, '')
+  .replace(/\.md$/, '');
 
 const worksCollection = defineCollection({
-  type: 'content',
+  loader: glob({
+    pattern: '**/index.md',
+    base: './src/content/works',
+    generateId: markdownId,
+  }),
   schema: z.object({
     workId:         uuid.optional(),
     title:          z.string(),
@@ -25,7 +34,11 @@ const worksCollection = defineCollection({
 });
 
 const authorsCollection = defineCollection({
-  type: 'content',
+  loader: glob({
+    pattern: '**/*.md',
+    base: './src/content/authors',
+    generateId: markdownId,
+  }),
   schema: z.object({
     profileId:   uuid.optional(),
     displayName: z.string(),
@@ -35,7 +48,11 @@ const authorsCollection = defineCollection({
   }),
 });
 const chaptersCollection = defineCollection({
-  type: 'content',
+  loader: glob({
+    pattern: '**/*.md',
+    base: './src/content/chapters',
+    generateId: markdownId,
+  }),
   schema: z.object({
     chapterId:   uuid.optional(),
     workId:      uuid.optional(),
@@ -49,7 +66,11 @@ const chaptersCollection = defineCollection({
 });
 
 const announcementsCollection = defineCollection({
-  type: 'content',
+  loader: glob({
+    pattern: '**/*.md',
+    base: './src/content/announcements',
+    generateId: markdownId,
+  }),
   schema: z.object({
     title:       z.string(),
     publishedAt: z.coerce.date(),

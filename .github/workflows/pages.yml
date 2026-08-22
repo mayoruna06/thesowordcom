@@ -48,6 +48,10 @@ jobs:
         working-directory: soword
         run: pnpm run check
 
+      - name: Run security regression tests
+        working-directory: soword
+        run: pnpm run test:security
+
       - name: Build site
         working-directory: soword
         run: pnpm run build

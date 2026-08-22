@@ -23,7 +23,7 @@ const dateStr = (d: Date) =>
       ? (
         <div class="announce-list">
           {announcements.slice(0, 5).map(ann => (
-            <a class="announce-item" href={`${base}announcements/${ann.slug}/`}>
+            <a class="announce-item" href={`${base}announcements/${ann.id}/`}>
               <span class="ann-date">{dateStr(ann.data.publishedAt)}</span>
               <span class="ann-title">{ann.data.title}</span>
             </a>

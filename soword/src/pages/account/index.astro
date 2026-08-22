@@ -214,13 +214,25 @@ import Footer from '@components/Footer.astro';
   function renderAvatarPicker() {
     const name = ($('pf-name') as HTMLInputElement).value;
     const opts = [{ key: '', emoji: '', label: '用暱稱首字' }, ...PRESET_AVATARS];
-    $('pf-avatars').innerHTML = opts.map(o => {
+    const buttons = opts.map(o => {
       const value = o.key ? `preset:${o.key}` : '';
       const face = avatarFace(value, name);
-      return `<button type="button" class="avatar-opt${value === pickedAvatar ? ' is-picked' : ''}"
-        data-value="${value}" title="${o.label}" aria-label="${o.label}"
-        style="background-color:${face.tone}${face.image ? `;background-image:url('${face.image}');background-size:cover;background-position:center` : ''}">${face.text}</button>`;
-    }).join('');
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = `avatar-opt${value === pickedAvatar ? ' is-picked' : ''}`;
+      button.dataset.value = value;
+      button.title = o.label;
+      button.setAttribute('aria-label', o.label);
+      button.style.backgroundColor = face.tone;
+      if (face.image) {
+        button.style.backgroundImage = `url(${JSON.stringify(face.image)})`;
+        button.style.backgroundSize = 'cover';
+        button.style.backgroundPosition = 'center';
+      }
+      button.textContent = face.text;
+      return button;
+    });
+    $('pf-avatars').replaceChildren(...buttons);
     $('pf-avatars').querySelectorAll<HTMLButtonElement>('.avatar-opt').forEach(b => {
       b.onclick = () => {
         pickedAvatar = b.dataset.value || '';
